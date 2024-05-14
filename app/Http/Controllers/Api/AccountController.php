@@ -33,29 +33,6 @@ class AccountController extends BaseAuthController {
                 'newpwd.min' => Lang::get('account.newpwd_min'),
                 'newpwd.confirmed' => Lang::get('account.newpwd_confirmed'),
             ],
-            'setForeignBank'=>[
-                'foreign_flag.required' => Lang::get('account.foreign_flag_required'),
-                'foreign_flag.in' => Lang::get('account.foreign_flag_required'),
-                'name.required' => Lang::get('account.bank_name_required'),
-                'swift.required' => Lang::get('account.bank_swift_required'),
-                'country.required' => Lang::get('account.bank_country_required'),
-                'city.required' => Lang::get('account.bank_city_required'),
-                'address.required' => Lang::get('account.bank_address_required'),
-                'user.required' => Lang::get('account.bank_user_required'),
-                'code.required' => Lang::get('account.bank_code_required'),
-                'email.required' => Lang::get('account.bank_email_required'),
-                'image.required' => Lang::get('account.bank_image_required'),
-            ],
-            'setBank'=>[
-                'foreign_flag.required' => Lang::get('account.foreign_flag_required'),
-                'foreign_flag.in' => Lang::get('account.foreign_flag_required'),
-                'name.required' => Lang::get('account.bank_name_required'),
-                'code.required' => Lang::get('account.bank_account_code_required'),
-                'account.required' => Lang::get('account.bank_account_required'),
-            ],
-            'unload'=>[
-                'code.required' => Lang::get('account.unload_bank_code_required'),
-            ],
         ];
     }
 
@@ -68,27 +45,6 @@ class AccountController extends BaseAuthController {
             'changePwdByEmail'=>[
                 'code'=>'required',
                 'newpwd'=>'required|min:6|confirmed',
-            ],
-            'setForeignBank'=>[
-                'foreign_flag' => 'required|in:N,Y',
-                'name' => 'required',
-                'swift' => 'required',
-                'country' => 'required',
-                'city' => 'required',
-                'address' => 'required',
-                'user' => 'required',
-                'code' => 'required',
-                'email' => 'required',
-                'image' => 'required',
-            ],
-            'setBank'=>[
-                'foreign_flag' => 'required|in:N,Y',
-                'name' =>'required',
-                'code' =>'required',
-                'account' =>'required',
-            ],
-            'unload'=>[
-                'code' =>'required',
             ],
         ];
     }
@@ -162,31 +118,6 @@ class AccountController extends BaseAuthController {
         ok();
     }
 
-
-    /**
-     * 发送验证码(解绑银行卡)
-     * @return 
-     */
-    public function sendByUnload(Request $request){
-
-        $m_user=new User();
-        $user=$m_user->getUserInfo($this->user_id);
-        $email=$user['email'];
-        $code=generateRandomInteger(6);
-        $expired=(self::CODE_EXPIRED/60).Lang::get('common.minutes');
-
-        $user = ['email' => $email, 'code' => $code, 'expired' => $expired];
-        try{
-            Mail::to($email)->send(new UnloadBankMail($user));
-            $m_send_code=new SendCode();
-            $m_send_code->addUserSendCode($this->user_id, SendCode::UNLOAD_BANK_EMAIL, $email, $code);
-        }catch(\Exception $e){
-            check(false, Lang::get('common.email_send_fail'));
-        }
-        
-        ok();
-    }
-
     /**
      * 通过邮箱修改密码
      * @return 
@@ -202,63 +133,5 @@ class AccountController extends BaseAuthController {
         $m_user=new User();
         $m_user->changePassword($this->user_id, $params['newpwd']);
         ok();
-    }
-
-    /**
-     * 设置银行卡信息
-     * @param  Request $request 
-     * @return 
-     */
-    public function setBank(Request $request){
-        $params=$request->post();
-        if(!empty($params['foreign_flag']) && $params['foreign_flag']=='N'){
-            $this->validate($params, 'setBank');
-        }else{
-            $this->validate($params, 'setForeignBank');
-        }
-        $m_bank=new Bank();
-        $m_bank->editBank($this->user_id,$params);
-        ok();
-    }
-
-    public function unloadBank(Request $request){
-        $params=$request->post();
-        $this->validate($params, 'unload');
-
-        $code=$params['code'];
-        $this->checkCode($code, SendCode::UNLOAD_BANK_EMAIL);
-
-        $m_bank=new Bank();
-        $m_bank->delUserBank($this->user_id);
-        ok();
-    }
-
-    /**
-     * 获取配置信息
-     * @return array
-     */
-    public function setting(Request $request){
-        $m_bank=new Bank();
-        $m_user=new User();
-        $user=$m_user->getUserInfo($this->user_id);
-        $bank=$m_bank->getUserBank($this->user_id);
-        ok([
-            'message'=>[
-                'email'=>$user['message_email'] ?? '',
-                'calling_code'=>$user['message_calling_code'] ?? '',
-                'phone'=>$user['message_phone'] ?? '',
-            ],
-            'bank'=>empty($bank) ? new \Stdclass() : $bank
-        ]);
-    }
-
-    public function checkCode($code, $type){
-        $m_send_code=new SendCode();
-        $send_code=$m_send_code->getUserSendCode($this->user_id, $type);
-
-        check(!empty($send_code), Lang::get('account.send_code_required'));
-        check($send_code['code']==$code, Lang::get('account.send_code_invalid'));
-        check(time()<strtotime($send_code['created_at'])+self::CODE_EXPIRED, Lang::get('account.send_code_expired'));
-        $m_send_code->delUserSendCode($this->user_id, $type);
     }
 }

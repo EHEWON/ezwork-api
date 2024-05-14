@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\SendCode;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Crypt;
@@ -21,8 +21,6 @@ class AuthController extends BaseController {
                 'email.required' => Lang::get('auth.email_required'),
                 'password.required' => Lang::get('auth.password_required'),
                 'password.min' => Lang::get('auth.password_min'),
-                'name.required' => Lang::get('auth.name_required'),
-                'country_id.required' => Lang::get('auth.country_required'),
                 'code.required' => Lang::get('auth.code_required'),
             ],
             'login'=>[
@@ -49,8 +47,6 @@ class AuthController extends BaseController {
             'register'=>[
                 'email'=>'required',
                 'password'=>'required|min:6',
-                'name'=>'required',
-                'country_id'=>'required',
                 'code'=>'required',
             ],
             'login'=>[
@@ -79,8 +75,8 @@ class AuthController extends BaseController {
         $this->validate($params, 'sendByRegister');
 
         $email=$params['email'];
-        $m_user=new User();
-        $user=$m_user->getUserByEmail($email);
+        $m_customer=new Customer();
+        $user=$m_customer->getCustomerByEmail($email);
         check(empty($user), Lang::get('auth.email_exists'));
 
         $code=generateRandomInteger(6);
@@ -106,8 +102,8 @@ class AuthController extends BaseController {
         $this->validate($params, 'sendByFind');
 
         $email=$params['email'];
-        $m_user=new User();
-        $user=$m_user->getUserByEmail($email);
+        $m_customer=new Customer();
+        $user=$m_customer->getCustomerByEmail($email);
         check(!empty($user), Lang::get('auth.user_not_exists'));
 
         $code=generateRandomInteger(6);
@@ -132,8 +128,8 @@ class AuthController extends BaseController {
         $this->validate($params, 'register');
 
         $email=$params['email'];
-        $m_user=new User();
-        $exist=$m_user->getUserByEmail($email);
+        $m_customer=new Customer();
+        $exist=$m_customer->getCustomerByEmail($email);
         check(empty($exist), Lang::get('auth.user_exist'));
 
         $m_send_code=new SendCode();
@@ -143,12 +139,12 @@ class AuthController extends BaseController {
         check(time()<strtotime($send_code['created_at'])+self::CODE_EXPIRED, Lang::get('account.send_code_expired'));
         check($params['code']==$send_code['code'], Lang::get('auth.code_invalid'));
 
-        $user_id=$m_user->registerUser($email, $params['password'], $params['name'], $params['country_id']);
+        $user_id=$m_customer->registerCustomer($params);
         $m_send_code->delRegisterEmailCode($email);
 
         $token=Crypt::encryptString($user_id);
 
-        ok(['token'=>$token, 'name'=>$params['name']]);
+        ok(['token'=>$token, 'email'=>$params['email']]);
     }
 
     /**
@@ -162,15 +158,15 @@ class AuthController extends BaseController {
         $email=$params['email'];
         $password=$params['password'];
 
-        $m_user=new User();
-        $user=$m_user->getAuthByEmail($email);
+        $m_customer=new Customer();
+        $user=$m_customer->getCustomerByEmail($email);
 
         check(!empty($user), Lang::get('auth.user_not_exists'));
         check(password_verify($password, $user['password']), Lang::get('auth.password_invalid'));
 
         $token=Crypt::encryptString($user['id']);
 
-        ok(['token'=>$token, 'name'=>$user['name']]);
+        ok(['token'=>$token, 'email'=>$user['email']]);
     }
 
     /**
@@ -191,10 +187,10 @@ class AuthController extends BaseController {
         check($send_code['code']==$code, Lang::get('account.send_code_invalid'));
         check(time()<strtotime($send_code['created_at'])+self::CODE_EXPIRED, Lang::get('account.send_code_expired'));
 
-        $m_user=new User();
-        $user=$m_user->getUserByEmail($email);
+        $m_customer=new Customer();
+        $user=$m_customer->getCustomerByEmail($email);
         check(!empty($user), Lang::get('auth.user_not_exists'));
-        $m_user->changePassword($user['id'], $params['newpwd']);
+        $m_customer->changePassword($user['id'], $params['newpwd']);
         $m_send_code->delFindEmailCode($email);
         ok();
     }

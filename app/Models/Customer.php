@@ -9,17 +9,78 @@ class Customer extends Model{
 
     protected $table = "customer";
 
-    public function registerUser($email,$password,$name,$country_id){
+    /**
+     * 获取用户列表
+     * @param  array  $params 
+     * @param  int $page   
+     * @param  int $limit  
+     */
+    public function getCustomers($params, $page=1, $limit=20){
+        if(!empty($params['keyword'])){
+            $this->where(function($q) use($params){
+                $keyword='%'.$params['keyword'].'%';
+                $q->where('customer_no','like',$keyword)
+                    ->orWhere('name','like',$keyword)
+                    ->orWhere('email','like',$keyword);
+            });
+        }
+        $this->skip(($page-1)*$limit)->limit($limit);
+        $results=$this->orderBy('id','desc')->get()->toArray();
+        return $results;
+    }
+
+    /**
+     * 编辑用户
+     * @param  int $customer_id 
+     * @param  array $data        
+     */
+    public function editCustomer($customer_id, $data){
+        $_data=[];
+        if(!empty($data['password'])){
+            $_data['password']=password_hash($data['password'], PASSWORD_DEFAULT);
+        }
+        $_data['email']=$data['email'];
+        $_data['level']=$data['level'];
+        return $this->where('id',$customer_id)->update($_data);
+    }
+
+    /**
+     * 操作用户状态
+     * @param  int $customer_id 
+     * @param  int $status
+     */
+    public function statusCustomer($customer_id, $status){
+        $this->where('id',$customer_id)->update(['status'=>$status]);
+    }
+
+    /**
+     * 注册用户
+     * @param  string $email    
+     * @param  string $password 
+     * @return 
+     */
+    public function registerCustomer($params){
         return $this->insertGetId([
-            'user_no'=>'P'.date('YmdHis').random_int(10000, 99999),
-            'email'=>$email, 
-            'password'=>password_hash($password, PASSWORD_DEFAULT),
-            'name'=>$name, 
-            'created_by'=>date('Y-m-d H:i:s'),
-            'country_id'=>$country_id,
-            'created_by'=>0,
+            'customer_no'=>'C'.date('YmdHis').random_int(10000, 99999),
+            'email'=>$params['email'], 
+            'password'=>password_hash($params['password'], PASSWORD_DEFAULT),
+            'level'=>'common',
+            'status'=>'enabled',
+            'created_at'=>date('Y-m-d H:i:s'),
             'deleted_flag'=>'N',
-            'invite_code'=>generateRandomString(6)
         ]);
+    }
+
+    public function getCustomerByEmail($email){
+        if(empty($email)){
+            return [];
+        }
+        $customer=$this->where('email',$email)->where('deleted_flag','N')->first();
+        return empty($customer) ? [] : $customer->toArray();
+    }
+
+    public function getCustomerInfo($customer_id){
+        $customer=$this->selectRaw('id,customer_no,email,level,status')->where('id',$customer_id)->first();
+        return empty($customer) ? [] : $customer->toArray();
     }
 }

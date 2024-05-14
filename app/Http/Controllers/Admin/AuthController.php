@@ -48,6 +48,6 @@ class AuthController extends BaseController {
 
         $token=Crypt::encryptString($user['id']);
 
-        ok(['token'=>$token, 'name'=>$user['name']]);
+        ok(['token'=>$token, 'name'=>$user['email']]);
     }
 }

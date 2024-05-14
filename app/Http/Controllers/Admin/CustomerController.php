@@ -3,9 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\UserInvite;
-use App\Models\UserInquiry;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Lang;
 
@@ -14,6 +11,27 @@ use Illuminate\Support\Facades\Lang;
  */
 class CustomerController extends BaseAuthController {
 
+    public function getMessages(){
+        return [
+            'edit'=>[
+                'email.required' => Lang::get('customer.email_required'),
+                'level.required' => Lang::get('customer.level_required'),
+                'level.in' => Lang::get('customer.level_required'),
+                'password.min' => Lang::get('customer.password_min'),
+            ]
+        ];
+    }
+
+    public function getRules(){
+        return [
+            'edit'=>[
+                'email'=>'required',
+                'level'=>'required|in:common,vip,COMMON,VIP',
+                'password'=>'min:6'
+            ]
+        ];
+    }
+
 
     /**
      * 关联客户列表
@@ -21,12 +39,11 @@ class CustomerController extends BaseAuthController {
      * @return 
      */
     public function index(Request $request){
-        $m_user_invite=new UserInvite();
+        $m_customer=new Customer();
         $params=$request->input();
-        $keyword=$params['keyword'] ?? '';
         $page=$params['page'] ?? 1;
         $limit=$params['limit'] ?? 20;
-        $result=$m_user_invite->getPartnerCustomers($keyword, $page, $limit);
+        $result=$m_customer->getCustomers($params, $page, $limit);
         ok($result);
     }
 
@@ -35,9 +52,22 @@ class CustomerController extends BaseAuthController {
      * @param  Request $request 
      * @return 
      */
-    public function info(Request $request, $partner_user_id, $customer_id){
-        $m_user_invite=new UserInvite();
-        $data=$m_user_invite->getInviteUserInfo($partner_user_id, $customer_id);
+    public function info(Request $request, $customer_id){
+        $m_customer=new Customer();
+        $data=$m_customer->getCustomerInfo($customer_id);
+        ok($data);
+    }
+
+    /**
+     * 关联客户的基本信息
+     * @param  Request $request 
+     * @return 
+     */
+    public function edit(Request $request, $customer_id){
+        $params=$request->post();
+        $this->validate($params, 'edit');
+        $m_customer=new Customer();
+        $data=$m_customer->editCustomer($customer_id, $params);
         ok($data);
     }
 }
