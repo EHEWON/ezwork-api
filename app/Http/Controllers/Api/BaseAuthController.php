@@ -21,9 +21,18 @@ abstract class BaseAuthController extends BaseController {
      */
     protected $user;
 
+    /**
+     * 要跳过校验的方法
+     * @var array
+     */
+    protected $skip_methods=[];
+
     public function __construct(){
 
         parent::__construct();
+
+        $method=Request::method();
+        echo $method;exit;
 
         $token=Request::header('token');
 
