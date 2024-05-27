@@ -16,17 +16,19 @@ class Customer extends Model{
      * @param  int $limit  
      */
     public function getCustomers($params, $page=1, $limit=20){
+        $query=DB::table($this->table);
+        $query->selectRaw('id,customer_no,email,level,status,created_at');
         if(!empty($params['keyword'])){
-            $this->where(function($q) use($params){
+            $query->where(function($q) use($params){
                 $keyword='%'.$params['keyword'].'%';
                 $q->where('customer_no','like',$keyword)
-                    ->orWhere('name','like',$keyword)
                     ->orWhere('email','like',$keyword);
             });
         }
-        $this->skip(($page-1)*$limit)->limit($limit);
-        $results=$this->orderBy('id','desc')->get()->toArray();
-        return $results;
+        $query->skip(($page-1)*$limit)->limit($limit);
+        $total=$query->clone()->count();
+        $results=$query->orderBy('id','desc')->get()->toArray();
+        return ['data'=>$results, 'total'=>$total];
     }
 
     /**
@@ -49,7 +51,7 @@ class Customer extends Model{
      * @param  int $customer_id 
      * @param  int $status
      */
-    public function statusCustomer($customer_id, $status){
+    public function changeCustomerStatus($customer_id, $status){
         $this->where('id',$customer_id)->update(['status'=>$status]);
     }
 

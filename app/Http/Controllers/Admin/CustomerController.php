@@ -18,6 +18,10 @@ class CustomerController extends BaseAuthController {
                 'level.required' => Lang::get('customer.level_required'),
                 'level.in' => Lang::get('customer.level_required'),
                 'password.min' => Lang::get('customer.password_min'),
+            ],
+            'status'=>[
+                'status.required' => Lang::get('customer.status_required'),
+                'status.in' => Lang::get('customer.status_required'),
             ]
         ];
     }
@@ -28,6 +32,9 @@ class CustomerController extends BaseAuthController {
                 'email'=>'required',
                 'level'=>'required|in:common,vip,COMMON,VIP',
                 'password'=>'min:6'
+            ],
+            'status'=>[
+                'status'=>'required|in:disabled,enabled,DISABLED,ENABLED',
             ]
         ];
     }
@@ -68,6 +75,19 @@ class CustomerController extends BaseAuthController {
         $this->validate($params, 'edit');
         $m_customer=new Customer();
         $data=$m_customer->editCustomer($customer_id, $params);
+        ok($data);
+    }
+
+    /**
+     * 修改账户状态
+     * @param  Request $request 
+     * @return 
+     */
+    public function status(Request $request, $customer_id){
+        $params=$request->post();
+        $this->validate($params, 'status');
+        $m_customer=new Customer();
+        $data=$m_customer->changeCustomerStatus($customer_id, $params['status']);
         ok($data);
     }
 }
