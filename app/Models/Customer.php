@@ -55,6 +55,12 @@ class Customer extends Model{
         $this->where('id',$customer_id)->update(['status'=>$status]);
     }
 
+    public function changePassword($customer_id, $password){
+        $this->where('id',$customer_id)->update([
+            'password'=>password_hash($password, PASSWORD_DEFAULT)
+        ]);
+    }
+
     /**
      * 注册用户
      * @param  string $email    

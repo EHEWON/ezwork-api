@@ -66,6 +66,8 @@ class Translate extends Model{
             'translate_no'=>'T'.date('YmdHis').random_int(10000, 99999),
             'origin_filename'=>$params['origin_filename'], 
             'origin_filepath'=>$params['origin_filepath'], 
+            'uuid'=>$params['uuid'],
+            'customer_id'=>$params['customer_id'],
             'target_filepath'=>'', 
             'status'=>'none', 
             'created_at'=>date('Y-m-d H:i:s'),
@@ -75,6 +77,11 @@ class Translate extends Model{
 
     public function getTranslateInfo($id){
         $translate=$this->where('id',$id)->first();
+        return empty($translate) ? [] : $translate->toArray();
+    }
+
+    public function getTranslateInfoByUUID($uuid){
+        $translate=$this->where('uuid',$uuid)->first();
         return empty($translate) ? [] : $translate->toArray();
     }
 

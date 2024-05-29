@@ -35,9 +35,9 @@ class AuthController extends BaseController {
             ],
             'find'=>[
                 'code.required' => Lang::get('account.email_code_required'),
-                'newpwd.required' => Lang::get('account.newpwd_required'),
-                'newpwd.min' => Lang::get('account.newpwd_min'),
-                'newpwd.confirmed' => Lang::get('account.newpwd_confirmed'),
+                'password.required' => Lang::get('account.newpwd_required'),
+                'password.min' => Lang::get('account.newpwd_min'),
+                'password.confirmed' => Lang::get('account.newpwd_confirmed'),
             ],
         ];
     }
@@ -61,7 +61,7 @@ class AuthController extends BaseController {
             ],
             'find'=>[
                 'code'=>'required',
-                'newpwd'=>'required|min:6|confirmed',
+                'password'=>'required|min:6|confirmed',
             ],
         ];
     }
@@ -166,7 +166,7 @@ class AuthController extends BaseController {
 
         $token=Crypt::encryptString($user['id']);
 
-        ok(['token'=>$token, 'email'=>$user['email']]);
+        ok(['token'=>$token, 'email'=>$user['email'],'level'=>$user['level']]);
     }
 
     /**
@@ -190,7 +190,7 @@ class AuthController extends BaseController {
         $m_customer=new Customer();
         $user=$m_customer->getCustomerByEmail($email);
         check(!empty($user), Lang::get('auth.user_not_exists'));
-        $m_customer->changePassword($user['id'], $params['newpwd']);
+        $m_customer->changePassword($user['id'], $params['password']);
         $m_send_code->delFindEmailCode($email);
         ok();
     }

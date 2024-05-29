@@ -32,7 +32,6 @@ abstract class BaseAuthController extends BaseController {
         parent::__construct();
 
         $method=Request::method();
-        echo $method;exit;
 
         $token=Request::header('token');
 
