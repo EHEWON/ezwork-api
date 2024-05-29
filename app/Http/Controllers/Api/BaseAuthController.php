@@ -13,13 +13,13 @@ abstract class BaseAuthController extends BaseController {
      * 登录用户id
      * @var integer
      */ 
-    protected $user_id=0;
+    protected $customer_id=0;
 
     /**
      * 登录用户信息
      * @var array
      */
-    protected $user;
+    protected $customer;
 
     /**
      * 要跳过校验的方法
@@ -39,7 +39,7 @@ abstract class BaseAuthController extends BaseController {
 
         try {
             $decrypted = Crypt::decryptString($token);
-            $this->user_id=$decrypted;
+            $this->customer_id=$decrypted;
         } catch (DecryptException $e) {
             check(!empty($token), Lang::get('account.re_login'));
         }

@@ -139,10 +139,10 @@ class AuthController extends BaseController {
         check(time()<strtotime($send_code['created_at'])+self::CODE_EXPIRED, Lang::get('account.send_code_expired'));
         check($params['code']==$send_code['code'], Lang::get('auth.code_invalid'));
 
-        $user_id=$m_customer->registerCustomer($params);
+        $customer_id=$m_customer->registerCustomer($params);
         $m_send_code->delRegisterEmailCode($email);
 
-        $token=Crypt::encryptString($user_id);
+        $token=Crypt::encryptString($customer_id);
 
         ok(['token'=>$token, 'email'=>$params['email']]);
     }

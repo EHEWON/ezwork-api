@@ -24,11 +24,17 @@ class Translate extends Model{
                     ->orWhere('origin_filename','like',$keyword);
             });
         }
+        if(!empty($params['customer_id'])){
+            $query->where('customer_id', $params['customer_id']);
+        }
         $total=$query->clone()->count();
         $query->selectRaw('t.id,t.translate_no,t.status,t.origin_filename,t.origin_filepath,t.target_filepath,t.start_at,t.end_at,c.customer_no');
         $query->leftJoin('customer as c','c.id','=','t.customer_id');
         $query->skip(($page-1)*$limit)->limit($limit);
         $results=$query->orderBy('id','desc')->get()->toArray();
+        foreach($results as &$result){
+            $result->status_name=$this->getStatusName($result->status);
+        }
         return ['data'=>$results, 'total'=>$total];
     }
 
@@ -91,5 +97,25 @@ class Translate extends Model{
      */
     public function deleteTranslate($id){
         $this->where('id',$id)->update(['deleted_flag'=>'Y']);
+    }
+
+    /**
+     * 删除数据
+     * @param  int $id 
+     */
+    public function deleteCustomerTranslate($customer_id,$id){
+        $this->where('id',$id)->where('customer_id',$customer_id)->update(['deleted_flag'=>'Y']);
+    }
+
+    public function deleteAllTranslate($customer_id){
+        $this->where('customer_id',$customer_id)->update(['deleted_flag'=>'Y']);
+    }
+
+    public function getStatusName($status){
+        switch(strtolower($status)){
+            case 'none':return '未开始';
+            case 'process':return '翻译中';
+            case 'done':return '已完成';
+        }
     }
 }

@@ -66,6 +66,18 @@ class TranslateController extends BaseAuthController {
             ],
         ];
     }
+
+
+    public function index(Request $request){
+        $params=$request->input();
+        $m_translate=new Translate();
+        $params['customer_id']=$this->customer_id;
+        $page=$params['page'] ?? 1;
+        $limit=$params['limit'] ?? 10;
+        $data=$m_translate->getTranslates($params, $page, $limit);
+        ok($data);
+    }
+
     /**
      * 关联客户列表
      * @param  Request $request 
@@ -99,12 +111,12 @@ class TranslateController extends BaseAuthController {
         $id=$m_translate->addTranslate([
             'origin_filename'=>$file_name,
             'origin_filepath'=>$params['file_path'],
-            'customer_id'=>$this->user_id,
+            'customer_id'=>$this->customer_id,
             'uuid'=>$params['uuid'],
         ]);
         $m_translate->startTranslate($id);
         // echo "python3 $translate_main -f $file_path -o $target_file -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_path'";
-        $cmd = shell_exec("python $translate_main -f $file_path -o $target_file -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_path'");
+        $cmd = shell_exec("python3 $translate_main -f $file_path -o $target_file -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_path'");
         // echo $cmd;
         if($this->checkEndTranslate($params['uuid'])){
             $m_translate->endTranslate($id, $target_path);
@@ -166,7 +178,19 @@ class TranslateController extends BaseAuthController {
         //     return JsonResponse({"code":1, "msg":"fail"})
     }
 
-    public function checkEndTranslate($uuid){
+    public function del(Request $request, $id){
+        $m_translate=new Translate();
+        $m_translate->deleteCustomerTranslate($this->customer_id,$id);
+        ok();
+    }
+
+    public function delAll(Request $request){
+        $m_translate=new Translate();
+        $m_translate->deleteAllTranslate($this->customer_id);
+        ok();
+    }
+
+    private function checkEndTranslate($uuid){
         $file=storage_path('app/public/process/'.$uuid.'.txt');
         if(file_exists($file)){
             $content=file_get_contents($file);
