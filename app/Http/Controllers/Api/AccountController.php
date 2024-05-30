@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Models\Customer;
+use App\Models\Translate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ChangePasswordMail;
@@ -97,5 +98,24 @@ class AccountController extends BaseAuthController {
         $m_customer=new Customer();
         $m_customer->changePassword($this->customer_id, $params['newpwd']);
         ok();
+    }
+
+    /**
+     * 存储空间使用情况
+     * @return 
+     */
+    public function storage(){
+        $m_translate=new Translate();
+        $m_customer=new Customer();
+
+        $customer=$m_customer->getCustomerInfo($this->customer_id);
+        $usedsize=$m_translate->getCustomerAllFileSize($this->customer_id);
+        $storage=bcdiv($customer['storage'], 1048576, 2);
+        $used=bcdiv($usedsize, 1048576, 2);
+        ok([
+            'storage'=>$storage,
+            'used'=>$used,
+            'percentage'=>bcmul(bcdiv($used, $storage, 3), 100),
+        ]);
     }
 }

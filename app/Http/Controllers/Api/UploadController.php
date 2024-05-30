@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
+use App\Models\Customer;
 use Illuminate\Support\Facades\Lang;
 
-class UploadController extends BaseController {
+class UploadController extends BaseAuthController {
 
     public function getMessages(){
         return [
@@ -29,6 +30,10 @@ class UploadController extends BaseController {
     public function index(Request $request) {
         $file=$request->file('file');
         if($file->isValid()){
+            $filesize=filesize($file->getPathname());
+            $m_customer=new Customer();
+            $avaiableStorage=$m_customer->getCustomerAvaiableStorage($this->customer_id);
+            check($avaiableStorage>$filesize, '存储空间不足');
             $ext=$file->getClientOriginalExtension();
             $hash = $file->hashName() ? $file->hashName() : Str::random(40);
             $filename=explode('.', $hash)[0];
@@ -40,6 +45,7 @@ class UploadController extends BaseController {
                 'uuid'=>$uuid
             ]);
         }
+        
         check(false, '文件上传失败');
     }
 

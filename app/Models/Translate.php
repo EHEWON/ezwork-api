@@ -53,11 +53,12 @@ class Translate extends Model{
      * 翻译结束
      * @param  int $id 
      */
-    public function endTranslate($id, $target_filepath){
+    public function endTranslate($id, $target_filepath, $target_filesize){
         $this->where('id',$id)->update([
             'status'=>'done',
             'end_at'=>date('Y-m-d H:i:s'),
-            'target_filepath'=>$target_filepath
+            'target_filepath'=>$target_filepath,
+            'target_filesize'=>$target_filesize,
         ]);
     }
 
@@ -72,6 +73,7 @@ class Translate extends Model{
             'translate_no'=>'T'.date('YmdHis').random_int(10000, 99999),
             'origin_filename'=>$params['origin_filename'], 
             'origin_filepath'=>$params['origin_filepath'], 
+            'origin_filesize'=>$params['origin_filesize'], 
             'uuid'=>$params['uuid'],
             'customer_id'=>$params['customer_id'],
             'target_filepath'=>'', 
@@ -117,5 +119,10 @@ class Translate extends Model{
             case 'process':return '翻译中';
             case 'done':return '已完成';
         }
+    }
+
+    public function getCustomerAllFileSize($customer_id){
+        $size=DB::table($this->table)->selectRaw('SUM(origin_filesize+target_filesize) as size') ->where('customer_id',$customer_id)->value('size');
+        return $size;
     }
 }

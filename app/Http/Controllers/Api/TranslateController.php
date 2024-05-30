@@ -111,6 +111,7 @@ class TranslateController extends BaseAuthController {
         $id=$m_translate->addTranslate([
             'origin_filename'=>$file_name,
             'origin_filepath'=>$params['file_path'],
+            'origin_filesize'=>filesize($file_path),
             'customer_id'=>$this->customer_id,
             'uuid'=>$params['uuid'],
         ]);
@@ -119,7 +120,7 @@ class TranslateController extends BaseAuthController {
         $cmd = shell_exec("python3 $translate_main -f $file_path -o $target_file -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_path'");
         // echo $cmd;
         if($this->checkEndTranslate($params['uuid'])){
-            $m_translate->endTranslate($id, $target_path);
+            $m_translate->endTranslate($id, $target_path, filesize($target_file));
         }
 
         ok();
@@ -149,7 +150,8 @@ class TranslateController extends BaseAuthController {
                     $m_translate=new Translate();
                     $translate=$m_translate->getTranslateInfoByUUID($uuid);
                     if($translate && strtolower($translate['status'])!='done'){
-                        $m_translate->endTranslate($translate['id'], $url);
+                        $target_path=storage_path('app/public/'.urldecode(str_replace('/storage/', '', $url)));
+                        $m_translate->endTranslate($translate['id'], $url, filesize($target_path));
                     }
                 }
             }else{

@@ -72,6 +72,7 @@ class Customer extends Model{
             'customer_no'=>'C'.date('YmdHis').random_int(10000, 99999),
             'email'=>$params['email'], 
             'password'=>password_hash($params['password'], PASSWORD_DEFAULT),
+            'storage'=>80*1024*1024,
             'level'=>'common',
             'status'=>'enabled',
             'created_at'=>date('Y-m-d H:i:s'),
@@ -88,7 +89,14 @@ class Customer extends Model{
     }
 
     public function getCustomerInfo($customer_id){
-        $customer=$this->selectRaw('id,customer_no,email,level,status,password')->where('id',$customer_id)->first();
+        $customer=$this->selectRaw('id,customer_no,email,level,status,password,storage')->where('id',$customer_id)->first();
         return empty($customer) ? [] : $customer->toArray();
+    }
+
+    public function getCustomerAvaiableStorage($customer_id){
+        $customer=$this->getCustomerInfo($customer_id);
+        $m_translate=new Translate();
+        $used=$m_translate->getCustomerAllFileSize($this->customer_id);
+        return $customer['storage']-$used;
     }
 }
