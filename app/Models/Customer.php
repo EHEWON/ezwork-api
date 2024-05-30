@@ -89,7 +89,7 @@ class Customer extends Model{
     }
 
     public function getCustomerInfo($customer_id){
-        $customer=$this->selectRaw('id,customer_no,email,level,status,password,storage')->where('id',$customer_id)->first();
+        $customer=$this->selectRaw('id,customer_no,email,status,level,status,password,storage')->where('id',$customer_id)->first();
         return empty($customer) ? [] : $customer->toArray();
     }
 

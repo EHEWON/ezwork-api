@@ -162,6 +162,7 @@ class AuthController extends BaseController {
         $user=$m_customer->getCustomerByEmail($email);
 
         check(!empty($user), Lang::get('auth.user_not_exists'));
+        check($user['status']=='enabled', '账户已禁用');
         check(password_verify($password, $user['password']), Lang::get('auth.password_invalid'));
 
         $token=Crypt::encryptString($user['id']);
