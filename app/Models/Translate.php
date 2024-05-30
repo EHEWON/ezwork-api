@@ -34,6 +34,7 @@ class Translate extends Model{
         $results=$query->orderBy('id','desc')->get()->toArray();
         foreach($results as &$result){
             $result->status_name=$this->getStatusName($result->status);
+            $result->spend_time=spend_time($result->start_at, $result->end_at);
         }
         return ['data'=>$results, 'total'=>$total];
     }

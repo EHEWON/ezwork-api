@@ -37,6 +37,24 @@ if (!function_exists('create_uuid')) {
     }
 }
 
+if (!function_exists('spend_time')) {
+    function spend_time($start_time, $end_time) {
+        if(empty($end_time)){
+            return "";
+        }
+        $diff = strtotime($end_time) - strtotime($start_time);
+        $str = '';
+        if ($diff <= 60) {
+            $str = $diff.'秒';
+        } elseif ($diff < 3600) {
+            $minutes=intval(floor($diff/60));
+            $seconds=$diff%60;
+            $str=$minutes.'分'.$seconds.'秒';
+        }
+        return $str;
+    }
+}
+
 if (!function_exists('check')) {
     function check(bool $assert, $message, $code = 1) {
         if (!$assert) {
