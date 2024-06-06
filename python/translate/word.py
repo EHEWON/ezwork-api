@@ -20,8 +20,8 @@ def start(input_file,output_file,lang,model,system,processfile,output_url,thread
     # 创建Document对象，加载Word文件
     document = Document(input_file)
     texts=[]
-    print("获取文本")
-    print(datetime.datetime.now())
+    # print("获取文本")
+    # print(datetime.datetime.now())
     # 遍历所有段落进行修改
     for paragraph in document.paragraphs:
         read_run(paragraph.runs, texts)
@@ -30,8 +30,8 @@ def start(input_file,output_file,lang,model,system,processfile,output_url,thread
             for hyperlink in paragraph.hyperlinks:
                 read_run(hyperlink.runs, texts)
 
-    print("翻译文本--开始")
-    print(datetime.datetime.now())
+    # print("翻译文本--开始")
+    # print(datetime.datetime.now())
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
@@ -62,8 +62,7 @@ def start(input_file,output_file,lang,model,system,processfile,output_url,thread
         else:
             time.sleep(1)
     # print(texts)
-    print("翻译文本-结束")
-    print(datetime.datetime.now())
+    # print("翻译文本-结束")
     text_count=0
     current_texts=[]
     for paragraph in document.paragraphs:
@@ -83,8 +82,8 @@ def start(input_file,output_file,lang,model,system,processfile,output_url,thread
                         for hyperlink in paragraph.hyperlinks:
                             text_count+=write_run(hyperlink.runs, texts)
 
-    print("编辑文档-结束")
-    print(datetime.datetime.now())
+    # print("编辑文档-结束")
+    # print(datetime.datetime.now())
     document.save(output_file)
     end_time = datetime.datetime.now()
     spend_time=common.display_spend(start_time, end_time)

@@ -13,11 +13,12 @@ def get(texts, index, target_lang,model,system,processfile,output_url):
         text['count']=count_text(text['text'])
         text['text']=content
         text['complete']=True
-        print("翻译{}--结束".format(str(index)))
-        print(datetime.datetime.now())
+        # print("翻译{}--结束".format(str(index)))
+        print(text)
+        # print(datetime.datetime.now())
     except Exception as e:
-        print(e)
-        traceback.print_exc()
+        # print(e)
+        # traceback.print_exc()
         text['complete']=True
         print("translate error")
     texts[index]=text
@@ -30,13 +31,16 @@ def req(text,target_lang,model,system):
         {"role": "system", "content": system.replace("{target_lang}", target_lang)},
         {"role": "user", "content": text}
     ]
-    print(openai.base_url)
+    # print(openai.base_url)
+    # print(message)
     response = openai.chat.completions.create(
         model=model,  # 使用GPT-3.5版本
         messages=message
     )
-    print(response)
-    return response.choices[0].message.content
+    content=response.choices[0].message.content
+    print(model)
+    print(content)
+    return content
 
 def check(model):
     try:
@@ -53,7 +57,7 @@ def check(model):
         # print(response)
         return True
     except Exception as e:
-        print(e)
+        # print(e)
         return False
 
 def process(texts, processfile, output_url):

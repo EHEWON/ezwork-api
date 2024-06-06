@@ -61,12 +61,13 @@ def read_row(rows,texts):
         for cell in row:
             value=cell.value
             if value!=None and not common.is_all_punc(value):
-                if text=="":
-                    text=value
-                else:
-                    text=text+"\n"+value
-        if text!=None and not common.is_all_punc(text):
-            texts.append({"text":text, "complete":False})
+                texts.append({"text":value, "complete":False})
+        #         if text=="":
+        #             text=value
+        #         else:
+        #             text=text+"\n"+value
+        # if text!=None and not common.is_all_punc(text):
+        #     texts.append({"text":text, "complete":False})
 
 def write_row(rows, texts):
     text_count=0
@@ -75,19 +76,22 @@ def write_row(rows, texts):
         for cell in row:
             value=cell.value
             if value!=None and not common.is_all_punc(value):
-                if text=="":
-                    text=value
-                else:
-                    text=text+"\n"+value
-        if text!=None and not common.is_all_punc(text):
-            item=texts.pop(0)
-            values=item['text'].split("\n")
-            text_count+=item['count']
-            for cell in row:
-                value=cell.value
-                if value!=None and not common.is_all_punc(value):
-                    if len(values)>0:
-                        cell.value=values.pop(0)
+                item=texts.pop(0)
+                text_count+=item['count']
+                cell.value=item['text']
+        #         if text=="":
+        #             text=value
+        #         else:
+        #             text=text+"\n"+value
+        # if text!=None and not common.is_all_punc(text):
+        #     item=texts.pop(0)
+        #     values=item['text'].split("\n")
+        #     text_count+=item['count']
+        #     for cell in row:
+        #         value=cell.value
+        #         if value!=None and not common.is_all_punc(value):
+        #             if len(values)>0:
+        #                 cell.value=values.pop(0)
     return text_count
 
 

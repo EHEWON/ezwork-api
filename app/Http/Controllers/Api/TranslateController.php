@@ -117,6 +117,7 @@ class TranslateController extends BaseAuthController {
         ]);
         $m_translate->startTranslate($id);
         // echo "python3 $translate_main -f $file_path -o $target_file -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_path'";
+        // exit;
         $cmd = shell_exec("python3 $translate_main -f $file_path -o $target_file -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_path'");
         echo $cmd;
         if($this->checkEndTranslate($params['uuid'])){
