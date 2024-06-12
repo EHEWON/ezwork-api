@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Str;
 
 class UploadController extends BaseAuthController {
 
@@ -36,8 +37,9 @@ class UploadController extends BaseAuthController {
             check($avaiableStorage>$filesize, '存储空间不足');
             $ext=$file->getClientOriginalExtension();
             $hash = $file->hashName() ? $file->hashName() : Str::random(40);
+            $datetime=date('ymd');
             $filename=explode('.', $hash)[0];
-            $path=$file->storeAs('uploads', $filename.'.'.$ext);
+            $path=$file->storeAs('/uploads/'.$datetime, $filename.'.'.$ext);
             $uuid=create_uuid();
             ok([
                 'filepath'=>$path,

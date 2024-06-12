@@ -86,21 +86,23 @@ def main():
 
     extension = file_path[file_path.rfind('.'):]
     file_name = file_path[:file_path.rfind('.')]
-
-    # 设置OpenAI API
-    translate.init_openai(api_url, api_key)
-    if extension=='.docx':
-        status,item_count,spend_time=word.start(file_path,target_file,target_lang,model,system,processfile,output_url,threads)
-    elif extension=='.xls' or extension == '.xlsx':
-        status,item_count,spend_time=excel.start(file_path,target_file,target_lang,model,system,processfile,output_url,threads)
-    elif extension=='.ppt' or extension == '.pptx':
-        status,item_count,spend_time=powerpoint.start(file_path,target_file,target_lang,model,system,processfile,output_url,threads)
-
-    if status:
-        print("success")
-        # print(item_count + ";" + spend_time)
-    else:
+    try:
+        # 设置OpenAI API
+        translate.init_openai(api_url, api_key)
+        if extension=='.docx':
+            status,item_count,spend_time=word.start(file_path,target_file,target_lang,model,system,processfile,output_url,threads)
+        elif extension=='.xls' or extension == '.xlsx':
+            status,item_count,spend_time=excel.start(file_path,target_file,target_lang,model,system,processfile,output_url,threads)
+        elif extension=='.ppt' or extension == '.pptx':
+            status,item_count,spend_time=powerpoint.start(file_path,target_file,target_lang,model,system,processfile,output_url,threads)
+        if status:
+            print("success")
+            # print(item_count + ";" + spend_time)
+        else:
+            print("翻译出错了")
+    except Exception as e:
         print("翻译出错了")
+        print(e)
 
 
 if __name__ == '__main__':

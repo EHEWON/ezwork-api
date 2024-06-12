@@ -35,6 +35,9 @@ class Translate extends Model{
         foreach($results as &$result){
             $result->status_name=$this->getStatusName($result->status);
             $result->spend_time=spend_time($result->start_at, $result->end_at);
+            if(strtolower($result->status)=='done'){
+                $result->target_filepath='/storage/'.trim($result->target_filepath,'/');
+            }
         }
         return ['data'=>$results, 'total'=>$total];
     }
@@ -54,11 +57,10 @@ class Translate extends Model{
      * 翻译结束
      * @param  int $id 
      */
-    public function endTranslate($id, $target_filepath, $target_filesize){
+    public function endTranslate($id, $target_filesize){
         $this->where('id',$id)->update([
             'status'=>'done',
             'end_at'=>date('Y-m-d H:i:s'),
-            'target_filepath'=>$target_filepath,
             'target_filesize'=>$target_filesize,
         ]);
     }
@@ -74,10 +76,16 @@ class Translate extends Model{
             'translate_no'=>'T'.date('YmdHis').random_int(10000, 99999),
             'origin_filename'=>$params['origin_filename'], 
             'origin_filepath'=>$params['origin_filepath'], 
+            'target_filepath'=>$params['target_filepath'], 
             'origin_filesize'=>$params['origin_filesize'], 
             'uuid'=>$params['uuid'],
+            'lang'=>$params['lang'],
+            'model'=>$params['model'],
+            'prompt'=>$params['prompt'],
+            'api_url'=>$params['api_url'],
+            'api_key'=>$params['api_key'],
+            'threads'=>$params['threads'],
             'customer_id'=>$params['customer_id'],
-            'target_filepath'=>'', 
             'status'=>'none', 
             'created_at'=>date('Y-m-d H:i:s'),
             'deleted_flag'=>'N',
