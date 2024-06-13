@@ -75,7 +75,7 @@ def write_row(rows, texts):
         text=""
         for cell in row:
             value=cell.value
-            if value!=None and not common.is_all_punc(value):
+            if value!=None and not common.is_all_punc(value) and len(texts)>0:
                 item=texts.pop(0)
                 text_count+=item['count']
                 cell.value=item['text']

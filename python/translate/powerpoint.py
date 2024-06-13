@@ -55,7 +55,7 @@ def start(input_file,output_file,lang,model,system,processfile,output_url,thread
             text_frame = shape.text_frame
             for paragraph in text_frame.paragraphs:
                 text=paragraph.text
-                if text!=None and len(text)>0 and not common.is_all_punc(text):
+                if text!=None and len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
                     item=texts.pop(0)
                     paragraph.text=item['text']
                     text_count+=item['count']

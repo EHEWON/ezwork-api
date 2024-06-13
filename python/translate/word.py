@@ -113,7 +113,7 @@ def write_run(runs,texts):
     text=""
     for index,run in enumerate(runs):
         if run.text=="":
-            if len(text)>0 and not common.is_all_punc(text):
+            if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
                 item=texts.pop(0)
                 text_count+=item.get('count',0)
                 runs[index-1].text=item.get('text',"")
@@ -121,7 +121,7 @@ def write_run(runs,texts):
         else:
             text+=run.text
             run.text=""
-    if len(text)>0 and not common.is_all_punc(text):
+    if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
         item=texts.pop(0)
         text_count+=item.get('count',0)
         runs[0].text=item.get('text',"")
