@@ -134,7 +134,7 @@ class TranslateController extends BaseAuthController {
         $m_translate->startTranslate($id);
         // echo "python3 $translate_main -f $origin_storage_path -o $target_storage_path -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_url'";
         // exit;
-        $cmd = shell_exec("python3 $translate_main -f $origin_storage_path -o $target_storage_path -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_url'");
+        $cmd = shell_exec("python3 $translate_main -f $origin_storage_path -o $target_storage_path -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key");
         echo $cmd;
         if($this->checkEndTranslate($uuid)){
             $m_translate->endTranslate($id, filesize($target_storage_path));
@@ -161,17 +161,17 @@ class TranslateController extends BaseAuthController {
                     $process=intval($values[1])/intval($values[0]);
                 }else if(count($values)>2){
                     $process=intval($values[1])/intval($values[0]);
-                    $url=$values[2];
-                    $count=$values[3];
-                    $spend=$values[4];
+                    $count=$values[2];
+                    $spend=$values[3];
                     $m_translate=new Translate();
                     $translate=$m_translate->getTranslateInfoByUUID($uuid);
-                    if($translate && strtolower($translate['status'])!='done'){
-                        $target_path=storage_path('app/public'.$translate['target_filepath']);
-                        $m_translate->endTranslate($translate['id'], filesize($target_path));
-                        $url='/storage/'.trim($translate['target_filepath'],'/');;
+                    if(!empty($translate)){
+                        $url='/storage/'.trim($translate['target_filepath'],'/');
+                        if(strtolower($translate['status'])!='done'){
+                            $target_path=storage_path('app/public'.$translate['target_filepath']);
+                            $m_translate->endTranslate($translate['id'], filesize($target_path));
+                        }
                     }
-
                 }
             }else{
                 $process='';

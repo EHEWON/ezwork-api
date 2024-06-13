@@ -74,9 +74,9 @@ class DocTranslate extends Command{
             }
 
             $m_translate->startTranslate($translate_id);
-            echo "python3 $translate_main -f $origin_filepath -o $target_file -l $lang --model $model --system '$prompt' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_url'";
+            echo "python3 $translate_main -f $origin_filepath -o $target_file -l $lang --model $model --system '$prompt' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key";
             // exit;
-            $cmd = shell_exec("python3 $translate_main -f $origin_filepath -o $target_file -l $lang --model $model --system '$prompt' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_url'");
+            $cmd = shell_exec("python3 $translate_main -f $origin_filepath -o $target_file -l $lang --model $model --system '$prompt' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key");
             echo $cmd;
             if($this->checkEndTranslate($uuid)){
                 $m_translate->endTranslate($translate_id, filesize($target_file));

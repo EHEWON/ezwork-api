@@ -7,7 +7,7 @@ import sys
 import time
 import datetime
 
-def start(input_file,output_file,lang,model,system,processfile,output_url,threads):
+def start(input_file,output_file,lang,model,system,processfile,threads):
     # 允许的最大线程
     if threads is None or threads=="" or int(threads)<0:
         max_threads=10
@@ -48,7 +48,7 @@ def start(input_file,output_file,lang,model,system,processfile,output_url,thread
     before_active_count=threading.activeCount()
     while run_index<=len(texts)-1:
         if threading.activeCount()<max_run+before_active_count:
-            thread = threading.Thread(target=translate.get,args=(texts,run_index, lang,model,system,processfile,output_url))
+            thread = threading.Thread(target=translate.get,args=(texts,run_index, lang,model,system,processfile))
             thread.start()
             run_index+=1
     
@@ -87,7 +87,7 @@ def start(input_file,output_file,lang,model,system,processfile,output_url,thread
     document.save(output_file)
     end_time = datetime.datetime.now()
     spend_time=common.display_spend(start_time, end_time)
-    translate.complete(processfile,output_url,text_count,spend_time)
+    translate.complete(processfile,text_count,spend_time)
     return True,text_count,spend_time
 
 
