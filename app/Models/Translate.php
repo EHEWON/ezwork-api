@@ -70,7 +70,7 @@ class Translate extends Model{
      * @param  int $id 
      */
     public function failedTranslate($id, $reason){
-        $this->where('id',$id)->update([
+        $this->where('id',$id)->increment('failed_count',1,[
             'status'=>'failed',
             'end_at'=>date('Y-m-d H:i:s'),
             'failed_reason'=>$reason,
@@ -139,6 +139,7 @@ class Translate extends Model{
             case 'none':return '未开始';
             case 'process':return '翻译中';
             case 'done':return '已完成';
+            case 'failed':return '翻译失败';
         }
     }
 

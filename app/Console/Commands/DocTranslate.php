@@ -36,6 +36,10 @@ class DocTranslate extends Command{
                 $q->where('status', 'none')->orWhere(function($t){
                     $t->where('status','process')
                         ->where('start_at','<', date('Y-m-d H:i:s',strtotime('+1 minutes')));
+                })
+                ->orWhere(function($t){
+                    $t->where('status','failed')
+                        ->where('failed_count','<', 3);
                 });
             })
             ->where('deleted_flag', 'N')
