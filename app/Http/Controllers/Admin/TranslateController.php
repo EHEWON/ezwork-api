@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Lang;
 class TranslateController extends BaseAuthController {
 
     /**
-     * 关联客户列表
+     * 翻译文件列表
      * @param  Request $request 
      * @return 
      */
@@ -26,7 +26,7 @@ class TranslateController extends BaseAuthController {
     }
 
     /**
-     * 关联客户的基本信息
+     * 翻译文件详情
      * @param  Request $request 
      * @return 
      */
