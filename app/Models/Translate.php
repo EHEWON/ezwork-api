@@ -62,6 +62,7 @@ class Translate extends Model{
             'status'=>'done',
             'end_at'=>date('Y-m-d H:i:s'),
             'target_filesize'=>$target_filesize,
+            'failed_count'=>0
         ]);
     }
 
