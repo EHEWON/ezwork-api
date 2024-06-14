@@ -64,6 +64,8 @@ class DocTranslate extends Command{
             echo $cmd;
             if($this->checkEndTranslate($uuid)){
                 $m_translate->endTranslate($translate_id, filesize($target_file));
+            }else{
+                $m_translate->failedTranslate($translate_id, $cmd);
             }
         }
     }

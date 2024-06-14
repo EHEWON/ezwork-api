@@ -66,6 +66,18 @@ class Translate extends Model{
     }
 
     /**
+     * 翻译失败
+     * @param  int $id 
+     */
+    public function failedTranslate($id, $reason){
+        $this->where('id',$id)->update([
+            'status'=>'failed',
+            'end_at'=>date('Y-m-d H:i:s'),
+            'failed_reason'=>$reason,
+        ]);
+    }
+
+    /**
      * 添加翻译记录
      * @param  string $email    
      * @param  string $password 

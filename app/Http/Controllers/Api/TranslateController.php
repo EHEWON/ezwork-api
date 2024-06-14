@@ -137,6 +137,8 @@ class TranslateController extends BaseAuthController {
         // echo $cmd;
         if($this->checkEndTranslate($uuid)){
             $m_translate->endTranslate($id, filesize($target_storage_path));
+        }else{
+            $m_translate->failedTranslate($id, $cmd);
         }
 
         ok();

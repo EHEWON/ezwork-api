@@ -61,6 +61,7 @@ def main():
     process_file= storage_path+"/process/"+uuid+".txt"
 
     extension = origin_filename[origin_filename.rfind('.'):]
+
     try:
         # 设置OpenAI API
         translate.init_openai(api_url, api_key)
@@ -76,7 +77,6 @@ def main():
         else:
             print("翻译出错了")
     except Exception as e:
-        print("翻译出错了")
         print(e)
 
     cursor.close()

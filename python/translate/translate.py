@@ -14,13 +14,13 @@ def get(texts, index, target_lang,model,system,processfile):
         text['text']=content
         text['complete']=True
         # print("翻译{}--结束".format(str(index)))
-        print(text)
+        # print(text)
         # print(datetime.datetime.now())
     except Exception as e:
-        # print(e)
+        print(e)
         # traceback.print_exc()
         text['complete']=True
-        print("translate error")
+        # print("translate error")
     texts[index]=text
     # print(text)
     process(texts, processfile)
@@ -38,8 +38,6 @@ def req(text,target_lang,model,system):
         messages=message
     )
     content=response.choices[0].message.content
-    print(model)
-    print(content)
     return content
 
 def check(model):
@@ -57,7 +55,7 @@ def check(model):
         # print(response)
         return True
     except Exception as e:
-        # print(e)
+        print(e)
         return False
 
 def process(texts, processfile):
