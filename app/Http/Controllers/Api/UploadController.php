@@ -42,7 +42,7 @@ class UploadController extends BaseAuthController {
             $path=$file->storeAs('/uploads/'.$datetime, $filename.'.'.$ext);
             $uuid=create_uuid();
             ok([
-                'filepath'=>$path,
+                'filepath'=>'/'.$path,
                 'filename'=>$file->getClientOriginalName(),
                 'uuid'=>$uuid
             ]);
@@ -56,7 +56,7 @@ class UploadController extends BaseAuthController {
         $this->validate($params, 'del');
 
         $filepath=$params['filepath'];
-        $fullpath=storage_path('app/public/'.$filepath);
+        $fullpath=storage_path('app/public'.$filepath);
         if(file_exists($fullpath)){
             unlink($fullpath);
         }

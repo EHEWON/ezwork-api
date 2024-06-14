@@ -95,16 +95,16 @@ class TranslateController extends BaseAuthController {
         $uuid=$params['uuid'];
         $extension = pathinfo($upload_filename, PATHINFO_EXTENSION);
         $filename = pathinfo($upload_filename,  PATHINFO_FILENAME);
-
+        $storage_path=storage_path('app/public');
         $target_filepath=sprintf('/translate/%s/%s', basename(pathinfo($origin_filepath,  PATHINFO_FILENAME), $extension),$filename.'-'.$params['lang'].'.'.$extension);
-        $origin_storage_path=storage_path('app/public/'.$origin_filepath);
-        $target_storage_path=storage_path('app/public'.$target_filepath);
+        $origin_storage_path=$storage_path.$origin_filepath;
+        $target_storage_path=$storage_path.$target_filepath;
         $target_url='/storage/'.$target_filepath;
         $target_dir=pathinfo($target_storage_path, PATHINFO_DIRNAME);
-        echo $target_dir;
+        // echo $target_dir;
         @mkdir($target_dir);
 
-        $process_file=storage_path('app/public/process/'.$uuid.'.txt');
+        $process_file=$storage_path.'/process/'.$uuid.'.txt';
         $lang=$params['lang'];
         $model=$params['model'];
         $system=str_replace('{target_lang}', $lang, $params['system']);
@@ -132,10 +132,9 @@ class TranslateController extends BaseAuthController {
             'threads'=>$threads,
         ]);
         $m_translate->startTranslate($id);
-        // echo "python3 $translate_main -f $origin_storage_path -o $target_storage_path -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key --output_url '$target_url'";
-        // exit;
-        $cmd = shell_exec("python3 $translate_main -f $origin_storage_path -o $target_storage_path -l $lang --model $model --system '$system' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key");
-        echo $cmd;
+        
+        $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
+        // echo $cmd;
         if($this->checkEndTranslate($uuid)){
             $m_translate->endTranslate($id, filesize($target_storage_path));
         }

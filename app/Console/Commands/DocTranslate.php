@@ -50,33 +50,17 @@ class DocTranslate extends Command{
 
             $translate_id=$t['id'];
             $uuid=$t['uuid'];
-            $lang=$t['lang'];
-            $model=$t['model'];
-            $threads=$t['threads'];
-            $api_url=$t['api_url'] ?? '';
-            $api_key=$t['api_key'] ?? '';
 
             $translate_main=base_path('python/translate/main.py');
-            $origin_filepath=storage_path('app/public/'.$t['origin_filepath']);
 
             $target_file=storage_path('app/public'.$t['target_filepath']);
             $target_dir=pathinfo($target_file, PATHINFO_DIRNAME);
             @mkdir($target_dir);
-            $target_url='/storage'.$t['target_filepath'];
-            $process_file=storage_path('app/public/process/'.$uuid.'.txt');
-           
-            $prompt=str_replace('{target_lang}', $lang, $t['prompt']);
 
-            $customer=Customer::where('id', $t['customer_id'])->first();
-            if(!empty($customer) && strtolower($customer['level'])=='vip'){
-                $api_url=config('openai.api_url');
-                $api_key=config('openai.api_key');
-            }
+            $storage_path=storage_path('app/public');
 
             $m_translate->startTranslate($translate_id);
-            echo "python3 $translate_main -f $origin_filepath -o $target_file -l $lang --model $model --system '$prompt' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key";
-            // exit;
-            $cmd = shell_exec("python3 $translate_main -f $origin_filepath -o $target_file -l $lang --model $model --system '$prompt' --threads $threads --processfile $process_file --api_url $api_url --api_key $api_key");
+            $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
             echo $cmd;
             if($this->checkEndTranslate($uuid)){
                 $m_translate->endTranslate($translate_id, filesize($target_file));

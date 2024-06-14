@@ -9,6 +9,7 @@ import translate
 import word
 import excel
 import powerpoint
+import pymysql
 
 _ = load_dotenv(find_dotenv()) # read local .env file
 
@@ -23,78 +24,52 @@ def main():
     run_index=0
     # 是否保留原文
     keep_original=False
-    # 默认为中文
-    target_lang='中文'
     # 要翻译的文件路径
     file_path=''
     # 翻译后的目标文件路径
     target_file=''
-    # openai模型
-    model=""
-    # 系统提示词
-    system=""
-    # 进度保存文件
-    processfile=""
-    # 输出文件地址
-    output_url=""
-    # openai的url和key
-    api_key=""
-    api_url=""
+    uuid=sys.argv[1]
+    storage_path=sys.argv[2]
 
-    # 进程数
-    threads=10
+    mysql_host=os.environ['DB_HOST']
+    mysql_port=os.environ['DB_PORT']
+    mysql_db=os.environ['DB_DATABASE']
+    mysql_user=os.environ['DB_USERNAME']
+    mysql_password=os.environ['DB_PASSWORD']
+
     # 命令行参数
-    short_opts = 'f:o:l:m:s'
-    long_opts = ['file=', 'output=','lang=','model=','system=','processfile=','output_url=','threads=','api_url=','api_key=']
-    try:
-        args, remainder = getopt.getopt(sys.argv[1:], short_opts, long_opts)
-    except getopt.GetoptError:
-        print('参数错误')
-        sys.exit(2)
-    for opt, arg in args:
-        if opt in ('-f', '--file'):
-            # 指定要操作的Word文件路径
-            file_path = arg
-        elif opt in ('-o', '--output'):
-            target_file=arg
-        elif opt in ('-l', '--lang'):
-            target_lang=arg
-        elif opt in ('--model'):
-            model=arg
-        elif opt in ('-m','--model'):
-            model=arg
-        elif opt in ('-s','--system'):
-            system=arg
-        elif opt in ('--processfile'):
-            processfile=arg
-        elif opt in ('--output_url'):
-            output_url=arg
-        elif opt in ('--threads'):
-            threads=arg
-        elif opt in ('--api_url'):
-            api_url=arg
-        elif opt in ('--api_key'):
-            api_key=arg
+    conn = pymysql.connect(host=mysql_host, port=int(mysql_port), user=mysql_user, passwd=mysql_password, db=mysql_db, charset='utf8mb4') 
+    cursor = conn.cursor(cursor=pymysql.cursors.DictCursor)
+    cursor.execute("select * from translate where uuid=%s", (uuid,)) 
+    t=cursor.fetchone()
+    origin_filename=t['origin_filename']
+    origin_filepath=t['origin_filepath']
+    target_filepath=t['target_filepath']
+    api_key=t['api_key']
+    api_url=t['api_url']
+    # 系统提示词
+    prompt=t['prompt']
+    # openai模型
+    model=t['model']
+    threads=t['threads']
+    # 目标语言
+    lang=t['lang']
 
-    if file_path is None or file_path == '':
-        print("must set -f or --file")
-        exit(2)
+    file_path=storage_path+origin_filepath
+    target_file=storage_path+target_filepath
+    # 进度保存文件
+    process_file= storage_path+"/process/"+uuid+".txt"
 
-    if target_file is None or target_file == '':
-        print("must set -o or --output")
-        exit(2)
-
-    extension = file_path[file_path.rfind('.'):]
-    file_name = file_path[:file_path.rfind('.')]
+    extension = origin_filename[origin_filename.rfind('.'):]
     try:
         # 设置OpenAI API
         translate.init_openai(api_url, api_key)
         if extension=='.docx':
-            status,item_count,spend_time=word.start(file_path,target_file,target_lang,model,system,processfile,threads)
+            status,item_count,spend_time=word.start(file_path,target_file,lang,model,prompt,process_file,threads)
         elif extension=='.xls' or extension == '.xlsx':
-            status,item_count,spend_time=excel.start(file_path,target_file,target_lang,model,system,processfile,threads)
+            status,item_count,spend_time=excel.start(file_path,target_file,lang,model,prompt,process_file,threads)
         elif extension=='.ppt' or extension == '.pptx':
-            status,item_count,spend_time=powerpoint.start(file_path,target_file,target_lang,model,system,processfile,threads)
+            status,item_count,spend_time=powerpoint.start(file_path,target_file,lang,model,prompt,process_file,threads)
         if status:
             print("success")
             # print(item_count + ";" + spend_time)
@@ -104,6 +79,8 @@ def main():
         print("翻译出错了")
         print(e)
 
+    cursor.close()
+    conn.close()
 
 if __name__ == '__main__':
     main()
