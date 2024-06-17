@@ -3,7 +3,7 @@ import datetime
 import common
 import traceback
 
-def get(texts, index, target_lang,model,system,processfile):
+def get(event,texts, index, target_lang,model,system,processfile):
     text=texts[index]
     # 创建一个对话列表
     # print("翻译{}--开始".format(str(index)))
@@ -16,6 +16,21 @@ def get(texts, index, target_lang,model,system,processfile):
         # print("翻译{}--结束".format(str(index)))
         # print(text)
         # print(datetime.datetime.now())
+    except openai.AuthenticationError as e:
+        event.set()
+        raise Exception(e.response)
+    except openai.APIConnectionError as e:
+        print(e.response)
+        event.set()
+    except openai.PermissionDeniedError as e:
+        print("The server could not be reached")
+        event.set()
+    except openai.RateLimitError as e:
+        print("A 429 status code was received; we should back off a bit.")
+        event.set()
+    except openai.APIStatusError as e:
+        print("Another non-200-range status code was received")
+        event.set()
     except Exception as e:
         print(e)
         # traceback.print_exc()
@@ -38,6 +53,7 @@ def req(text,target_lang,model,system):
         messages=message
     )
     content=response.choices[0].message.content
+    # print(content)
     return content
 
 def check(model):
