@@ -17,19 +17,20 @@ def get(event,texts, index, target_lang,model,system,processfile):
         # print(text)
         # print(datetime.datetime.now())
     except openai.AuthenticationError as e:
+        print("AuthenticationError")
         event.set()
-        raise Exception(e.response)
     except openai.APIConnectionError as e:
-        print(e.response)
+        print("APIConnectionError")
         event.set()
     except openai.PermissionDeniedError as e:
-        print("The server could not be reached")
+        print("PermissionDeniedError")
         event.set()
     except openai.RateLimitError as e:
-        print("A 429 status code was received; we should back off a bit.")
+        print("RateLimitError")
         event.set()
     except openai.APIStatusError as e:
-        print("Another non-200-range status code was received")
+        print("APIStatusError")
+        print(e.response)
         event.set()
     except Exception as e:
         print(e)

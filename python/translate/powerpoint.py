@@ -31,11 +31,15 @@ def start(input_file,output_file,lang,model,system,processfile,threads):
     
     max_run=max_threads if len(texts)>max_threads else len(texts)
     before_active_count=threading.activeCount()
+    event=threading.Event()
     while run_index<=len(texts)-1:
         if threading.activeCount()<max_run+before_active_count:
-            thread = threading.Thread(target=translate.get,args=(texts,run_index, lang,model,system,processfile))
-            thread.start()
-            run_index+=1
+            if not event.is_set():
+                thread = threading.Thread(target=translate.get,args=(event,texts,run_index, lang,model,system,processfile))
+                thread.start()
+                run_index+=1
+            else:
+                return False,0,""
     
     while True:
         complete=True

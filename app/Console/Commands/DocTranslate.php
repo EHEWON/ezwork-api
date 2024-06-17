@@ -46,7 +46,7 @@ class DocTranslate extends Command{
             ->where('deleted_flag', 'N')
             ->orderBy('id','asc')
             ->get()->toArray();
-        
+
         if(empty($translates)) return [];
 
         $ids=[];
