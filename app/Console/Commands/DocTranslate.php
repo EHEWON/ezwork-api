@@ -28,6 +28,7 @@ class DocTranslate extends Command{
      */
     public function handle(){
 
+        @set_time_limit(0);
         date_default_timezone_set('Asia/Shanghai');
 
         $m_translate=new Translate();

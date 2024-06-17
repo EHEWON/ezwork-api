@@ -85,6 +85,7 @@ class TranslateController extends BaseAuthController {
      * @return 
      */
     public function start(Request $request){
+        @set_time_limit(0);
 
         $params=$request->post();
         $this->validate($params, 'start');

@@ -42,6 +42,7 @@ def main():
     cursor = conn.cursor(cursor=pymysql.cursors.DictCursor)
     cursor.execute("select * from translate where uuid=%s", (uuid,)) 
     t=cursor.fetchone()
+    translate_id=t['id']
     origin_filename=t['origin_filename']
     origin_filepath=t['origin_filepath']
     target_filepath=t['target_filepath']
@@ -61,7 +62,8 @@ def main():
     process_file= storage_path+"/process/"+uuid+".txt"
 
     extension = origin_filename[origin_filename.rfind('.'):]
-
+    item_count=0
+    spend_time=''
     try:
         # 设置OpenAI API
         translate.init_openai(api_url, api_key)
@@ -73,12 +75,14 @@ def main():
             status,item_count,spend_time=powerpoint.start(file_path,target_file,lang,model,prompt,process_file,threads)
         if status:
             print("success")
+            cursor.execute("update translate set word_count=%s where id=%s", (item_count, translate_id))
             # print(item_count + ";" + spend_time)
         else:
             print("翻译出错了")
     except Exception as e:
         print(e)
 
+    conn.commit()
     cursor.close()
     conn.close()
 
