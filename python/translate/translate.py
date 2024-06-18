@@ -17,20 +17,25 @@ def get(event,texts, index, target_lang,model,system,processfile):
         # print(text)
         # print(datetime.datetime.now())
     except openai.AuthenticationError as e:
-        print("AuthenticationError")
+        if not event.is_set():
+            print("AuthenticationError")
         event.set()
     except openai.APIConnectionError as e:
-        print("APIConnectionError")
+        if not event.is_set():
+            print("APIConnectionError")
         event.set()
     except openai.PermissionDeniedError as e:
-        print("PermissionDeniedError")
+        if not event.is_set():
+            print("PermissionDeniedError")
         event.set()
     except openai.RateLimitError as e:
-        print("RateLimitError")
+        if not event.is_set():
+            print("RateLimitError")
         event.set()
     except openai.APIStatusError as e:
-        print("APIStatusError")
-        print(e.response)
+        if not event.is_set():
+            print("APIStatusError")
+            print(e.response)
         event.set()
     except Exception as e:
         print(e)
