@@ -2,6 +2,7 @@ import openai
 import datetime
 import common
 import traceback
+import re
 
 def get(event,texts, index, target_lang,model,system,processfile):
     text=texts[index]
@@ -11,7 +12,8 @@ def get(event,texts, index, target_lang,model,system,processfile):
     try:
         content=req(text['text'], target_lang, model, system)
         text['count']=count_text(text['text'])
-        text['text']=content
+        if check_translated(content):
+            text['text']=content
         text['complete']=True
         # print("翻译{}--结束".format(str(index)))
         # print(text)
@@ -58,6 +60,7 @@ def req(text,target_lang,model,system):
         model=model,  # 使用GPT-3.5版本
         messages=message
     )
+    print(response.choices[0])
     content=response.choices[0].message.content
     # print(content)
     return content
@@ -116,3 +119,9 @@ def init_openai(url, key):
         else:
             url+="/v1/"
     openai.base_url = url
+
+def check_translated(content):
+    if content.startswith("Sorry, I cannot") or content.startswith("Sorry, I can't") or content.startswith("Sorry, I need more") or content.startswith("抱歉，无法翻译") or content.startswith("错误：提供的文本") or content.startswith("抱歉，无法理解") or content.startswith("无法翻译") or content.startswith("抱歉，我无法") or content.startswith("对不起，我无法") or content.startswith("ご指示の内容は") or content.startswith("申し訳ございません") or content.startswith("Простите，") or content.startswith("Извините,") or content.startswith("Lo siento,"):
+        return False
+    else:
+        return True
