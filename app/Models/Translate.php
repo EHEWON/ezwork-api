@@ -145,7 +145,11 @@ class Translate extends Model{
     }
 
     public function getCustomerAllFileSize($customer_id){
-        $size=DB::table($this->table)->selectRaw('SUM(origin_filesize+target_filesize) as size') ->where('customer_id',$customer_id)->value('size');
+        $size=DB::table($this->table)
+            ->selectRaw('SUM(origin_filesize+target_filesize) as size')
+            ->where('customer_id',$customer_id)
+            ->where('deleted_flag','N')
+            ->value('size');
         return $size;
     }
 }
