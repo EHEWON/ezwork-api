@@ -18,7 +18,11 @@ def start(input_file,output_file,lang,model,system,processfile,threads):
     max_chars=1000
     start_time = datetime.datetime.now()
     # 创建Document对象，加载Word文件
-    document = Document(input_file)
+    try:
+        document = Document(input_file)
+    except Exception as e:
+        print(e)
+        return False,0,""
     texts=[]
     # print("获取文本")
     # print(datetime.datetime.now())

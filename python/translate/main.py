@@ -68,6 +68,7 @@ def main():
         # 设置OpenAI API
         translate.init_openai(api_url, api_key)
         if extension=='.docx':
+            print(file_path)
             status,item_count,spend_time=word.start(file_path,target_file,lang,model,prompt,process_file,threads)
         elif extension=='.xls' or extension == '.xlsx':
             status,item_count,spend_time=excel.start(file_path,target_file,lang,model,prompt,process_file,threads)
