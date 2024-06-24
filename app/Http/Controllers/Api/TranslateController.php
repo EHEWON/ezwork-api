@@ -86,6 +86,7 @@ class TranslateController extends BaseAuthController {
      */
     public function start(Request $request){
         @set_time_limit(0);
+        date_default_timezone_set('Asia/Shanghai');
 
         $params=$request->post();
         $this->validate($params, 'start');
