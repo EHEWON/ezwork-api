@@ -39,6 +39,7 @@ class Translate extends Model{
                 $result->target_filepath='/storage/'.trim($result->target_filepath,'/');
             }else{
                 $result->target_filepath='';
+                $result->spend_time='';
             }
         }
         return ['data'=>$results, 'total'=>$total];
