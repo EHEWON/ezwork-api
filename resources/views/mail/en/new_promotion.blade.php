@@ -14,7 +14,7 @@
     </p>
     <p>
       <a href="{{env('MALL_URL')}}" target="_blank">
-        <img style="width: 128px;" src="{{env('FILE_HOST')}}/group1/M00/00/00/rBFIw2I65zKAHbkFAADxj2CkeEU808.png" />
+        <img style="width: 128px;" src="https://file05.erui.com/group1/M00/00/00/rBFIw2I65zKAHbkFAADxj2CkeEU808.png" />
       </a>
     </p>
   </body>

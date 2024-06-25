@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Models\Customer;
 use App\Models\SendCode;
+use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\RegisterMail;
 use App\Mail\FindPasswordMail;
+use App\Mail\NewUserMail;
 
 class AuthController extends BaseController {
 
@@ -144,6 +147,20 @@ class AuthController extends BaseController {
 
         $token=Crypt::encryptString($customer_id);
 
+        $m_setting=new Setting();
+        $users=$m_setting->getSettingByAlias('notice_setting');
+        if(!empty($users)){
+            $m_user=new User();
+            $emails=$m_user->getEmailByUsers($users);
+            if(!empty($emails)){
+                $params = ['email' => $email];
+                try{
+                    $content=Mail::to($emails)->send(new NewUserMail($params));
+                }catch(\Exception $e){
+                }
+            }
+        }
+        
         ok(['token'=>$token, 'email'=>$params['email']]);
     }
 

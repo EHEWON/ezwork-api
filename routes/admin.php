@@ -22,3 +22,7 @@ Route::get('/translates', [TranslateController::class, 'index']);
 Route::delete('/translate/{id}', [TranslateController::class, 'delete']);
 
 Route::post('/image', [ImageController::class, 'index']);
+
+
+Route::get('/setting/notice', [SettingController::class, 'notice']);
+Route::post('/setting/notice', [SettingController::class, 'notice_setting']);

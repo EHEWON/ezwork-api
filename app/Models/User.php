@@ -12,7 +12,7 @@ class User extends Model{
         if(empty($user_id)){
             return [];
         }
-        $user=$this->where('user_id',$user_id)->where('deleted_flag','N')->first();
+        $user=$this->where('id',$user_id)->where('deleted_flag','N')->first();
         return empty($user) ? [] : $user->toArray();
     }
 
@@ -23,7 +23,7 @@ class User extends Model{
      */
     public function getEmailByUsers($user_id_arr){
         if(empty($user_id_arr)) return [];
-        return $this->whereIn('user_id', $user_id_arr)->pluck('email')->toArray();
+        return $this->whereIn('id', $user_id_arr)->pluck('email')->toArray();
     }
 
     /**
