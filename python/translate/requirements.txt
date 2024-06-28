@@ -1,5 +1,5 @@
 openai
-python-docx
+python-docx==1.1.2
 openpyxl
 python-pptx
 pymysql

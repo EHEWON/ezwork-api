@@ -38,13 +38,20 @@ def start(input_file,output_file,lang,model,system,processfile,threads):
     # print(datetime.datetime.now())
     for table in document.tables:
         for row in table.rows:
+            start_span=0
             for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    read_run(paragraph.runs, texts)
+                start_span+=1
+                if start_span==cell.grid_span:
+                    start_span=0
+                    # read_cell(cell, texts)
+                    for index,paragraph in enumerate(cell.paragraphs):
+                        # print(index)
+                        # print(paragraph.text)
+                        read_run(paragraph.runs, texts)
 
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            read_run(hyperlink.runs, texts)
+                        if len(paragraph.hyperlinks)>0:
+                            for hyperlink in paragraph.hyperlinks:
+                                read_run(hyperlink.runs, texts)
 
     # print(texts)
     # exit()
@@ -82,13 +89,18 @@ def start(input_file,output_file,lang,model,system,processfile,threads):
 
     for table in document.tables:
         for row in table.rows:
+            start_span=0
             for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    text_count+=write_run(paragraph.runs, texts)
+                start_span+=1
+                if start_span==cell.grid_span:
+                    start_span=0
+                    # text_count+=write_cell(cell, texts)
+                    for paragraph in cell.paragraphs:
+                        text_count+=write_run(paragraph.runs, texts)
 
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            text_count+=write_run(hyperlink.runs, texts)
+                        if len(paragraph.hyperlinks)>0:
+                            for hyperlink in paragraph.hyperlinks:
+                                text_count+=write_run(hyperlink.runs, texts)
 
     # print("编辑文档-结束")
     # print(datetime.datetime.now())
@@ -101,17 +113,20 @@ def start(input_file,output_file,lang,model,system,processfile,threads):
 
 
 def read_run(runs,texts):
-    text=""
+    # text=""
     if len(runs)>0 or len(texts)==0:
-        for run in runs:
-            if run.text=="":
-                if len(text)>0 and not common.is_all_punc(text):        
-                    texts.append({"text":text, "complete":False})
-                    text=""
-            else:
-                text+=run.text
-        if len(text)>0 and not common.is_all_punc(text):
-            texts.append({"text":text, "complete":False})
+        for index,run in enumerate(runs):
+            text=run.text
+            if len(text)>0 and not common.is_all_punc(text):        
+                texts.append({"text":text, "complete":False})
+        #     if run.text=="":
+        #         if len(text)>0 and not common.is_all_punc(text):        
+        #             texts.append({"text":text, "complete":False})
+        #             text=""
+        #     else:
+        #         text+=run.text
+        # if len(text)>0 and not common.is_all_punc(text):
+        #     texts.append({"text":text, "complete":False})
 
 
 def write_run(runs,texts):
@@ -120,17 +135,38 @@ def write_run(runs,texts):
         return text_count
     text=""
     for index,run in enumerate(runs):
-        if run.text=="":
-            if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
-                item=texts.pop(0)
-                text_count+=item.get('count',0)
-                runs[index-1].text=item.get('text',"")
-                text=""
-        else:
-            text+=run.text
-            run.text=""
+        text=run.text
+        if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
+            item=texts.pop(0)
+            text_count+=item.get('count',0)
+            run.text=item.get('text',"")
+        # if run.text=="":
+        #     if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
+        #         item=texts.pop(0)
+        #         text_count+=item.get('count',0)
+        #         runs[index-1].text=item.get('text',"")
+        #         text=""
+        # else:
+        #     text+=run.text
+        #     run.text=""
+    # if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
+    #     item=texts.pop(0)
+    #     text_count+=item.get('count',0)
+    #     runs[0].text=item.get('text',"")
+    return text_count
+
+
+def read_cell(cell,texts):
+    text=cell.text
+    if len(text)>0 and not common.is_all_punc(text):
+        texts.append({"text":text, "complete":False})
+
+
+def write_cell(cell,texts):
+    text=cell.text
+    text_count=0
     if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
         item=texts.pop(0)
         text_count+=item.get('count',0)
-        runs[0].text=item.get('text',"")
+        cell.text=item.get('text',"")
     return text_count
