@@ -25,8 +25,8 @@ class Customer extends Model{
                     ->orWhere('email','like',$keyword);
             });
         }
-        $query->skip(($page-1)*$limit)->limit($limit);
         $total=$query->clone()->count();
+        $query->skip(($page-1)*$limit)->limit($limit);
         $results=$query->orderBy('id','desc')->get()->toArray();
         return ['data'=>$results, 'total'=>$total];
     }
