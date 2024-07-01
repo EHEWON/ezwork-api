@@ -60,7 +60,8 @@ def req(text,target_lang,model,system):
         model=model,  # 使用GPT-3.5版本
         messages=message
     )
-    # print(response.choices[0])
+    # for choices in response.choices:
+    #     print(choices.message.content)
     content=response.choices[0].message.content
     # print(content)
     return content

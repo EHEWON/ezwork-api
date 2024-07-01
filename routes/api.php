@@ -21,3 +21,4 @@ Route::delete('/translate/all', [TranslateController::class, 'delAll']);
 Route::post('/process', [TranslateController::class, 'process']);
 Route::post('/check', [TranslateController::class, 'check']);
 Route::get('/storage', [AccountController::class, 'storage']);
+Route::get('/info', [AccountController::class, 'info']);

@@ -118,4 +118,17 @@ class AccountController extends BaseAuthController {
             'percentage'=>bcmul(bcdiv($used, $storage, 3), 100),
         ]);
     }
+
+    /**
+     * 登录用户信息
+     * @return 
+     */
+    public function info(){
+        $m_customer=new Customer();
+        $customer=$m_customer->getCustomerInfo($this->customer_id);
+        ok([
+            'email'=>$customer['email'],
+            'level'=>$customer['level'],
+        ]);
+    }
 }
