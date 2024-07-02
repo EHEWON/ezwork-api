@@ -4,7 +4,9 @@ import common
 import traceback
 import re
 
-def get(event,texts, index, target_lang,model,system,processfile):
+def get(cursor,translate_id, event,texts, index, target_lang,model,backup_model,system,processfile):
+    if event.is_set():
+        exit(0)
     text=texts[index]
     # 创建一个对话列表
     # print("翻译{}--开始".format(str(index)))
@@ -19,34 +21,49 @@ def get(event,texts, index, target_lang,model,system,processfile):
         # print(text)
         # print(datetime.datetime.now())
     except openai.AuthenticationError as e:
-        if not event.is_set():
-            print("AuthenticationError")
-        event.set()
+        if backup_model!=None and backup_model!="":
+            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
+        else:
+            if not event.is_set():
+                error(cursor,translate_id,processfile, "openai密钥或令牌无效")
+            event.set()
     except openai.APIConnectionError as e:
-        if not event.is_set():
-            print("APIConnectionError")
-        event.set()
+        if backup_model!=None and backup_model!="":
+            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
+        else:
+            if not event.is_set():
+                error(cursor,translate_id,processfile, "请求无法与openai服务器或建立安全连接")
+            event.set()
     except openai.PermissionDeniedError as e:
-        if not event.is_set():
-            print("PermissionDeniedError")
-        event.set()
+        if backup_model!=None and backup_model!="":
+            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
+        else:
+            if not event.is_set():
+                error(cursor,translate_id,processfile, "访问权限被禁止")
+            event.set()
     except openai.RateLimitError as e:
-        if not event.is_set():
-            print("RateLimitError")
-        event.set()
+        if backup_model!=None and backup_model!="":
+            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
+        else:
+            if not event.is_set():
+                error(cursor,translate_id,processfile, "访问速率达到限制,10分钟后再试")
+            event.set()
     except openai.APIStatusError as e:
-        if not event.is_set():
-            print("APIStatusError")
-            print(e.response)
-        event.set()
+        if backup_model!=None and backup_model!="":
+            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
+        else:
+            if not event.is_set():
+                error(cursor,translate_id,processfile, e.response)
+            event.set()
     except Exception as e:
-        print(e)
+        # print(e)
         # traceback.print_exc()
         text['complete']=True
         # print("translate error")
     texts[index]=text
     # print(text)
-    process(texts, processfile)
+    if not event.is_set():
+        process(texts, processfile)
     exit(0)
 
 def req(text,target_lang,model,system):
@@ -99,6 +116,12 @@ def process(texts, processfile):
 def complete(processfile,text_count,spend_time):
     with open(processfile, 'w') as f:
         f.write("1$$$1$$$"+str(text_count)+"$$$"+spend_time)
+        f.close()
+
+def error(cursor,translate_id,processfile, message):
+    cursor.execute("update translate set failed_count=failed_count+1,status='failed',end_at=now(),failed_reason=%s where id=%s", (message, translate_id))
+    with open(processfile, 'w') as f:
+        f.write("-1$$$"+message)
         f.close()
 
 def count_text(text):

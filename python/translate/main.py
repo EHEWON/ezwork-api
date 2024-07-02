@@ -52,6 +52,7 @@ def main():
     prompt=t['prompt']
     # openai模型
     model=t['model']
+    backup_model=t['backup_model']
     threads=t['threads']
     # 目标语言
     lang=t['lang']
@@ -69,14 +70,15 @@ def main():
         translate.init_openai(api_url, api_key)
         if extension=='.docx':
             print(file_path)
-            status,item_count,spend_time=word.start(file_path,target_file,lang,model,prompt,process_file,threads)
+            status,item_count,spend_time=word.start(cursor,translate_id,file_path,target_file,lang,model,backup_model,prompt,process_file,threads)
         elif extension=='.xls' or extension == '.xlsx':
-            status,item_count,spend_time=excel.start(file_path,target_file,lang,model,prompt,process_file,threads)
+            status,item_count,spend_time=excel.start(cursor,translate_id,file_path,target_file,lang,model,backup_model,prompt,process_file,threads)
         elif extension=='.ppt' or extension == '.pptx':
-            status,item_count,spend_time=powerpoint.start(file_path,target_file,lang,model,prompt,process_file,threads)
+            status,item_count,spend_time=powerpoint.start(cursor,translate_id,file_path,target_file,lang,model,backup_model,prompt,process_file,threads)
         if status:
+            target_filesize=os.stat(target_file).st_size
+            cursor.execute("update translate set status='done',end_at=now(),target_filesize=%s,word_count=%s where id=%s", (target_filesize,item_count, translate_id))
             print("success")
-            cursor.execute("update translate set word_count=%s where id=%s", (item_count, translate_id))
             # print(item_count + ";" + spend_time)
         else:
             print("翻译出错了")

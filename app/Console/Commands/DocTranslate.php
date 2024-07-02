@@ -68,9 +68,9 @@ class DocTranslate extends Command{
             $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
             echo $cmd;
             if($this->checkEndTranslate($uuid)){
-                $m_translate->endTranslate($translate_id, filesize($target_file));
+                // $m_translate->endTranslate($translate_id, filesize($target_file));
             }else{
-                $m_translate->failedTranslate($translate_id, $cmd);
+                // $m_translate->failedTranslate($translate_id, $cmd);
             }
         }
     }

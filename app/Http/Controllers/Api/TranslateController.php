@@ -109,6 +109,7 @@ class TranslateController extends BaseAuthController {
         $process_file=$storage_path.'/process/'.$uuid.'.txt';
         $lang=$params['lang'];
         $model=$params['model'];
+        $backup_model=$params['backup_model'];
         $system=str_replace('{target_lang}', $lang, $params['system']);
         $threads=$params['threads'];
         $api_url=$params['api_url'] ?? '';
@@ -128,6 +129,7 @@ class TranslateController extends BaseAuthController {
             'uuid'=>$uuid,
             'lang'=>$lang,
             'model'=>$model,
+            'backup_model'=>$backup_model,
             'prompt'=>$system,
             'api_url'=>$api_url,
             'api_key'=>$api_key,
@@ -138,9 +140,9 @@ class TranslateController extends BaseAuthController {
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
         echo $cmd;
         if($this->checkEndTranslate($uuid)){
-            $m_translate->endTranslate($id, filesize($target_storage_path));
+            // $m_translate->endTranslate($id, filesize($target_storage_path));
         }else{
-            $m_translate->failedTranslate($id, $cmd);
+            // $m_translate->failedTranslate($id, $cmd);
         }
 
         ok();
@@ -161,7 +163,11 @@ class TranslateController extends BaseAuthController {
             if(!empty($content)){
                 $values=explode('$$$', $content);
                 if(count($values)==2){
-                    $process=intval($values[1])/intval($values[0]);
+                    if($values[0]==-1){
+                        check(false, $values[1]);
+                    }else{
+                        $process=intval($values[1])/intval($values[0]);
+                    }
                 }else if(count($values)>2){
                     $process=intval($values[1])/intval($values[0]);
                     $count=$values[2];
