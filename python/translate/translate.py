@@ -3,16 +3,25 @@ import datetime
 import common
 import traceback
 import re
+import os
+import pymysql
+from db  import dbconn
 
-def get(cursor,translate_id, event,texts, index, target_lang,model,backup_model,system,processfile):
+def get(trans, event,texts, index):
     if event.is_set():
         exit(0)
+    translate_id=trans['id']
+    target_lang=trans['lang']
+    model=trans['model']
+    backup_model=trans['backup_model']
+    prompt=trans['prompt']
+    process_file=trans['process_file']
     text=texts[index]
     # 创建一个对话列表
     # print("翻译{}--开始".format(str(index)))
     # print(datetime.datetime.now())
     try:
-        content=req(text['text'], target_lang, model, system)
+        content=req(text['text'], target_lang, model, prompt)
         text['count']=count_text(text['text'])
         if check_translated(content):
             text['text']=content
@@ -21,40 +30,17 @@ def get(cursor,translate_id, event,texts, index, target_lang,model,backup_model,
         # print(text)
         # print(datetime.datetime.now())
     except openai.AuthenticationError as e:
-        if backup_model!=None and backup_model!="":
-            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
-        else:
-            if not event.is_set():
-                error(cursor,translate_id,processfile, "openai密钥或令牌无效")
-            event.set()
+        use_backup_model(trans, event,texts, index, "openai密钥或令牌无效")
     except openai.APIConnectionError as e:
-        if backup_model!=None and backup_model!="":
-            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
-        else:
-            if not event.is_set():
-                error(cursor,translate_id,processfile, "请求无法与openai服务器或建立安全连接")
-            event.set()
+        use_backup_model(trans, event,texts, index, "请求无法与openai服务器或建立安全连接")
     except openai.PermissionDeniedError as e:
-        if backup_model!=None and backup_model!="":
-            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
-        else:
-            if not event.is_set():
-                error(cursor,translate_id,processfile, "访问权限被禁止")
-            event.set()
+        use_backup_model(trans, event,texts, index, "访问权限被禁止")
     except openai.RateLimitError as e:
-        if backup_model!=None and backup_model!="":
-            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
-        else:
-            if not event.is_set():
-                error(cursor,translate_id,processfile, "访问速率达到限制,10分钟后再试")
-            event.set()
+        use_backup_model(trans, event,texts, index, "访问速率达到限制,10分钟后再试")
+    except openai.InternalServerError as e:
+        use_backup_model(trans, event,texts, index, "当前分组上游负载已饱和，请稍后再试")
     except openai.APIStatusError as e:
-        if backup_model!=None and backup_model!="":
-            get(cursor,translate_id,event,texts, index, target_lang,backup_model,"",system,processfile)
-        else:
-            if not event.is_set():
-                error(cursor,translate_id,processfile, e.response)
-            event.set()
+        use_backup_model(trans, event,texts, index, e.response)
     except Exception as e:
         # print(e)
         # traceback.print_exc()
@@ -63,12 +49,12 @@ def get(cursor,translate_id, event,texts, index, target_lang,model,backup_model,
     texts[index]=text
     # print(text)
     if not event.is_set():
-        process(texts, processfile)
+        process(texts, process_file)
     exit(0)
 
-def req(text,target_lang,model,system):
+def req(text,target_lang,model,prompt):
     message = [
-        {"role": "system", "content": system.replace("{target_lang}", target_lang)},
+        {"role": "system", "content": prompt.replace("{target_lang}", target_lang)},
         {"role": "user", "content": text}
     ]
     # print(openai.base_url)
@@ -101,26 +87,36 @@ def check(model):
         print(e)
         return False
 
-def process(texts, processfile):
+def process(texts, process_file):
     total=0
     complete=0
     for text in texts:
         total+=1
         if text['complete']:
             complete+=1
-    with open(processfile, 'w') as f:
+    with open(process_file, 'w') as f:
         if total!=complete:
             f.write(str(total)+"$$$"+str(complete))
         f.close()
 
-def complete(processfile,text_count,spend_time):
-    with open(processfile, 'w') as f:
+def complete(trans,text_count,spend_time):
+    conn=dbconn()
+    cursor=conn.cursor()
+    target_filesize=os.stat(trans['target_file']).st_size
+    cursor.execute("update translate set status='done',end_at=now(),target_filesize=%s,word_count=%s where id=%s", (target_filesize,text_count, trans['id']))
+    conn.commit()
+    cursor.close()
+    with open(trans['process_file'], 'w') as f:
         f.write("1$$$1$$$"+str(text_count)+"$$$"+spend_time)
         f.close()
 
-def error(cursor,translate_id,processfile, message):
+def error(translate_id,process_file, message):
+    conn=dbconn()
+    cursor=conn.cursor()
     cursor.execute("update translate set failed_count=failed_count+1,status='failed',end_at=now(),failed_reason=%s where id=%s", (message, translate_id))
-    with open(processfile, 'w') as f:
+    conn.commit()
+    cursor.close()
+    with open(process_file, 'w') as f:
         f.write("-1$$$"+message)
         f.close()
 
@@ -149,3 +145,14 @@ def check_translated(content):
         return False
     else:
         return True
+
+
+def use_backup_model(trans, event,texts, index, message):
+    if trans['backup_model']!=None and trans['backup_model']!="":
+        trans['model']=trans['backup_model']
+        trans['backup_model']=""
+        get(trans, event,texts, index)
+    else:
+        if not event.is_set():
+            error(trans['id'],trans['process_file'], message)
+        event.set()

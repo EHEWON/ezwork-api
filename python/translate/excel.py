@@ -7,8 +7,9 @@ import sys
 import time
 import datetime
 
-def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,system,processfile,threads):
+def start(trans):
     # 允许的最大线程
+    threads=trans['threads']
     if threads is None or int(threads)<0:
         max_threads=10
     else:
@@ -16,7 +17,7 @@ def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,sys
     # 当前执行的索引位置
     run_index=0
     start_time = datetime.datetime.now()
-    wb = openpyxl.load_workbook(input_file) 
+    wb = openpyxl.load_workbook(trans['file_path']) 
     sheets = wb.get_sheet_names()
     texts=[]
     for sheet in sheets:
@@ -30,11 +31,11 @@ def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,sys
     while run_index<=len(texts)-1:
         if threading.activeCount()<max_run+before_active_count:
             if not event.is_set():
-                thread = threading.Thread(target=translate.get,args=(cursor,translate_id,event,texts,run_index, lang,model,backup_model,system,processfile))
+                thread = threading.Thread(target=translate.get,args=(trans,event,texts,run_index))
                 thread.start()
                 run_index+=1
             else:
-                return False,0,""
+                return False
     
     while True:
         complete=True
@@ -52,11 +53,11 @@ def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,sys
         ws = wb.get_sheet_by_name(sheet)
         text_count+=write_row(ws.rows, texts)
 
-    wb.save(output_file)
+    wb.save(trans['target_file'])
     end_time = datetime.datetime.now()
     spend_time=common.display_spend(start_time, end_time)
-    translate.complete(processfile,text_count,spend_time)
-    return True,text_count,spend_time
+    translate.complete(trans,text_count,spend_time)
+    return True
 
 
 def read_row(rows,texts):

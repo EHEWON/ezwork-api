@@ -7,8 +7,9 @@ import sys
 import time
 import datetime
 
-def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,system,processfile,threads):
+def start(trans):
     # 允许的最大线程
+    threads=trans['threads']
     if threads is None or int(threads)<0:
         max_threads=10
     else:
@@ -16,7 +17,7 @@ def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,sys
     # 当前执行的索引位置
     run_index=0
     start_time = datetime.datetime.now()
-    wb = pptx.Presentation(input_file) 
+    wb = pptx.Presentation(trans['file_path']) 
     slides = wb.slides
     texts=[]
     for slide in slides:
@@ -35,11 +36,11 @@ def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,sys
     while run_index<=len(texts)-1:
         if threading.activeCount()<max_run+before_active_count:
             if not event.is_set():
-                thread = threading.Thread(target=translate.get,args=(cursor,translate_id,event,texts,run_index, lang,model,backup_model,system,processfile))
+                thread = threading.Thread(target=translate.get,args=(trans,event,texts,run_index))
                 thread.start()
                 run_index+=1
             else:
-                return False,0,""
+                return False
     
     while True:
         complete=True
@@ -64,10 +65,10 @@ def start(cursor,translate_id,input_file,output_file,lang,model,backup_model,sys
                     paragraph.text=item['text']
                     text_count+=item['count']
 
-    wb.save(output_file)
+    wb.save(trans['target_file'])
     end_time = datetime.datetime.now()
     spend_time=common.display_spend(start_time, end_time)
-    translate.complete(processfile,text_count,spend_time)
-    return True,text_count,spend_time
+    translate.complete(trans,text_count,spend_time)
+    return True
 
 

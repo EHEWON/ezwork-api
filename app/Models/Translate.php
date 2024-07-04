@@ -97,6 +97,7 @@ class Translate extends Model{
             'uuid'=>$params['uuid'],
             'lang'=>$params['lang'],
             'model'=>$params['model'],
+            'type'=>$params['type'],
             'backup_model'=>$params['backup_model'],
             'prompt'=>$params['prompt'],
             'api_url'=>$params['api_url'],
