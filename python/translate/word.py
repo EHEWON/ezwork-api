@@ -1,5 +1,7 @@
 import threading
 from docx import Document
+from docx.shared import Pt
+from docx.shared import Inches
 import translate
 import common
 import os
@@ -25,34 +27,12 @@ def start(trans):
         translate.error(trans['id'],trans['process_file'], "无法访问该文档")
         return False
     texts=[]
-    # print("获取文本")
-    # print(datetime.datetime.now())
-    # 遍历所有段落进行修改
-    for paragraph in document.paragraphs:
-        read_run(paragraph.runs, texts)
-        
-        if len(paragraph.hyperlinks)>0:
-            for hyperlink in paragraph.hyperlinks:
-                read_run(hyperlink.runs, texts)
 
-    # print("翻译文本--开始")
-    # print(datetime.datetime.now())
-    for table in document.tables:
-        for row in table.rows:
-            start_span=0
-            for cell in row.cells:
-                start_span+=1
-                # if start_span==cell.grid_span:
-                #     start_span=0
-                    # read_cell(cell, texts)
-                for index,paragraph in enumerate(cell.paragraphs):
-                    # print(index)
-                    # print(paragraph.text)
-                    read_run(paragraph.runs, texts)
+    # 仅文字-保留原文-重排
+    # if trans['type']=='trans_text_both_new':
 
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            read_run(hyperlink.runs, texts)
+    # read_paragraph_text(document, texts)
+    read_rune_text(document, texts)
 
     # print(texts)
     # exit()
@@ -79,31 +59,12 @@ def start(trans):
             break
         else:
             time.sleep(1)
-    # print(texts)
+    print(texts)
     print("翻译文本-结束")
-    text_count=0
-    current_texts=[]
-    for paragraph in document.paragraphs:
-        text_count+=write_run(paragraph.runs, texts)
+    # text_count=write_rune_text(document, texts)
+    text_count=write_rune_both(document, texts)
+    # text_count=write_paragraph_text(document, texts)
 
-        if len(paragraph.hyperlinks)>0:
-            for hyperlink in paragraph.hyperlinks:
-                text_count+=write_run(hyperlink.runs, texts)
-
-    for table in document.tables:
-        for row in table.rows:
-            start_span=0
-            for cell in row.cells:
-                # start_span+=1
-                # if start_span==cell.grid_span:
-                #     start_span=0
-                    # text_count+=write_cell(cell, texts)
-                for paragraph in cell.paragraphs:
-                    text_count+=write_run(paragraph.runs, texts)
-
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            text_count+=write_run(hyperlink.runs, texts)
 
     # print("编辑文档-结束")
     # print(datetime.datetime.now())
@@ -124,6 +85,7 @@ def write_paragraph_text(document, texts):
         if check_text(text) and len(texts)>0:
             item=texts.pop(0)
             paragraph.text=item.get('text',"")
+            # paragraph.text=paragraph.text+"\n"+item.get('text',"")
 
 def read_rune_text(document, texts):
     for paragraph in document.paragraphs:
@@ -175,6 +137,46 @@ def write_rune_text(document, texts):
                     if len(paragraph.hyperlinks)>0:
                         for hyperlink in paragraph.hyperlinks:
                             text_count+=write_run(hyperlink.runs, texts)
+
+#保留原译文
+def write_rune_both(document, texts):
+    text_count=0
+    for paragraph in document.paragraphs:
+        space_before=paragraph.paragraph_format.space_before
+        space_after=paragraph.paragraph_format.space_after
+        line_spacing=paragraph.paragraph_format.line_spacing
+        print(paragraph.text)
+        if(len(paragraph.runs)>0):
+            paragraph.runs[-1].add_break()
+            add_paragraph_run(paragraph, paragraph.runs, texts, text_count)
+        if len(paragraph.hyperlinks)>0:
+            paragraph.hyperlinks[0].runs[-1].add_break()
+            for hyperlink in paragraph.hyperlinks:
+                add_paragraph_run(paragraph, hyperlink.runs, texts, text_count)
+        # if space_before!=None:
+        #     paragraph.paragraph_format.space_before=Inches(space_before).pt
+        # if space_after!=None:
+        #     paragraph.paragraph_format.space_after=Inches(space_after).pt
+        # if line_spacing!=None:
+        #     paragraph.paragraph_format.line_spacing=line_spacing
+             #   paragraph.add_run(hyperlink.text, hyperlink.runs[0].style)
+        # text_count+=write_run(paragraph.runs, texts)
+    for table in document.tables:
+        for row in table.rows:
+            # start_span=0
+            for cell in row.cells:
+                # start_span+=1
+                # if start_span==cell.grid_span:
+                #     start_span=0
+                    # text_count+=write_cell(cell, texts)
+                for paragraph in cell.paragraphs:
+                    paragraph.runs[-1].add_break()
+                    add_paragraph_run(paragraph, paragraph.runs, texts, text_count)
+
+                    if len(paragraph.hyperlinks)>0:
+                        for hyperlink in paragraph.hyperlinks:
+                            add_paragraph_run(paragraph, hyperlink.runs, texts, text_count)
+
 
 def read_run(runs,texts):
     # text=""
@@ -236,3 +238,21 @@ def write_cell(cell,texts):
         text_count+=item.get('count',0)
         cell.text=item.get('text',"")
     return text_count
+
+def add_paragraph_run(paragraph, runs, texts, text_count):
+    for index,run in enumerate(runs):
+        if check_text(run.text) and len(texts)>0:
+            item=texts.pop(0)
+            text_count+=item.get('count',0)
+            new_run=paragraph.add_run(run.text, run.style)
+            new_run.text=item.get('text',"")
+            set_run_style(new_run, run)
+
+def set_run_style(new_run, copy_run):
+    new_run.font.italic= copy_run.font.italic
+    new_run.font.strike= copy_run.font.strike
+    new_run.font.bold= copy_run.font.bold
+    new_run.font.size= copy_run.font.size
+    new_run.font.color.rgb= copy_run.font.color.rgb
+    new_run.underline= copy_run.underline
+    new_run.style= copy_run.style
