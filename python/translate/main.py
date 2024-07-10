@@ -69,6 +69,7 @@ def main():
         else:
             print("翻译出错了")
     except Exception as e:
+        translate.error(translate_id,process_file,str(e))
         print(e)
     conn.close()
 
