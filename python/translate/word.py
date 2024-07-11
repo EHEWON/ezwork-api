@@ -160,6 +160,8 @@ def write_cell_text(cell, texts):
 
 def read_rune_text(document, texts):
     for paragraph in document.paragraphs:
+        line_spacing=paragraph.paragraph_format.line_spacing
+        # print("line_spacing:",line_spacing)
         read_run(paragraph.runs, texts)
         # print(line_spacing_unit)
         if len(paragraph.hyperlinks)>0:
@@ -334,12 +336,15 @@ def set_paragraph_linespace(paragraph):
         space_before=paragraph.paragraph_format.space_before
         space_after=paragraph.paragraph_format.space_after
         line_spacing=paragraph.paragraph_format.line_spacing
+        line_spacing_rule=paragraph.paragraph_format.line_spacing_rule
         if space_before!=None:
-            paragraph.paragraph_format.space_before=Pt(0)
+            paragraph.paragraph_format.space_before=space_before
         if space_after!=None:
-            paragraph.paragraph_format.space_after=Pt(0)
+            paragraph.paragraph_format.space_after=space_after
         if line_spacing!=None:
-            paragraph.paragraph_format.line_spacing=Pt(0)
+            paragraph.paragraph_format.line_spacing=line_spacing
+        if line_spacing_rule!=None:
+            paragraph.paragraph_format.line_spacing_rule=line_spacing_rule
 
 def check_image(run):
     if run.element.find('.//w:drawing', namespaces=run.element.nsmap) is not None:
