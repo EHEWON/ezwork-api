@@ -9,7 +9,7 @@ import word
 import excel
 import powerpoint
 import pymysql
-from db import dbconn
+import db
 
 # 当前正在执行的线程
 run_threads=0
@@ -29,11 +29,8 @@ def main():
     uuid=sys.argv[1]
     storage_path=sys.argv[2]
 
-    conn=dbconn()
-    cursor=conn.cursor(cursor=pymysql.cursors.DictCursor)
-    cursor.execute("select * from translate where uuid=%s", (uuid,)) 
-    trans=cursor.fetchone()
-    cursor.close()
+    trans=db.get("select * from translate where uuid=%s", uuid)
+
     translate_id=trans['id']
     origin_filename=trans['origin_filename']
     origin_filepath=trans['origin_filepath']
@@ -70,7 +67,6 @@ def main():
             print("翻译出错了")
     except Exception as e:
         print(e)
-    conn.close()
 
 if __name__ == '__main__':
     main()

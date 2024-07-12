@@ -5,7 +5,7 @@ import traceback
 import re
 import os
 import pymysql
-from db  import dbconn
+import db
 
 def get(trans, event,texts, index):
     if event.is_set():
@@ -100,22 +100,14 @@ def process(texts, process_file):
         f.close()
 
 def complete(trans,text_count,spend_time):
-    conn=dbconn()
-    cursor=conn.cursor()
     target_filesize=os.stat(trans['target_file']).st_size
-    cursor.execute("update translate set status='done',end_at=now(),target_filesize=%s,word_count=%s where id=%s", (target_filesize,text_count, trans['id']))
-    conn.commit()
-    cursor.close()
+    db.execute("update translate set status='done',end_at=now(),target_filesize=%s,word_count=%s where id=%s", target_filesize, text_count, trans['id'])
     with open(trans['process_file'], 'w') as f:
         f.write("1$$$1$$$"+str(text_count)+"$$$"+spend_time)
         f.close()
 
 def error(translate_id,process_file, message):
-    conn=dbconn()
-    cursor=conn.cursor()
-    cursor.execute("update translate set failed_count=failed_count+1,status='failed',end_at=now(),failed_reason=%s where id=%s", (message, translate_id))
-    conn.commit()
-    cursor.close()
+    db.execute("update translate set failed_count=failed_count+1,status='failed',end_at=now(),failed_reason=%s where id=%s", message, translate_id)
     with open(process_file, 'w') as f:
         f.write("-1$$$"+message)
         f.close()
