@@ -109,7 +109,7 @@ class TranslateController extends BaseAuthController {
         $process_file=$storage_path.'/process/'.$uuid.'.txt';
         $lang=$params['lang'];
         $model=$params['model'];
-        $type=(!empty($params['type']) && is_array($params['type'])) ? array_pop($params['type']) : '';
+        $type=$params['type'];
         $backup_model=$params['backup_model'] ?? '';
         $system=str_replace('{target_lang}', $lang, $params['system']);
         $threads=$params['threads'];
