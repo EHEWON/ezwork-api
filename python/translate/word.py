@@ -1,5 +1,8 @@
 import threading
 from docx import Document
+from docx.shared import Pt
+from docx.shared import Inches
+from docx.oxml.ns import qn
 import translate
 import common
 import os
@@ -25,34 +28,29 @@ def start(trans):
         translate.error(trans['id'],trans['process_file'], "无法访问该文档")
         return False
     texts=[]
-    # print("获取文本")
-    # print(datetime.datetime.now())
-    # 遍历所有段落进行修改
-    for paragraph in document.paragraphs:
-        read_run(paragraph.runs, texts)
-        
-        if len(paragraph.hyperlinks)>0:
-            for hyperlink in paragraph.hyperlinks:
-                read_run(hyperlink.runs, texts)
 
-    # print("翻译文本--开始")
-    # print(datetime.datetime.now())
-    for table in document.tables:
-        for row in table.rows:
-            start_span=0
-            for cell in row.cells:
-                start_span+=1
-                # if start_span==cell.grid_span:
-                #     start_span=0
-                    # read_cell(cell, texts)
-                for index,paragraph in enumerate(cell.paragraphs):
-                    # print(index)
-                    # print(paragraph.text)
-                    read_run(paragraph.runs, texts)
-
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            read_run(hyperlink.runs, texts)
+    trans_type=trans['type']
+    if trans_type=="trans_text_only_inherit":
+        # 仅文字-保留原文-继承原版面
+        read_rune_text(document, texts)
+    elif trans_type=="trans_text_only_new" or trans_type=="trans_text_both_new":
+        # 仅文字-保留原文-重排
+        read_paragraph_text(document, texts)
+    elif trans_type=="trans_text_both_inherit":
+        # 仅文字-保留原文-重排/继承原版面
+        read_rune_text(document, texts)
+    elif trans_type=="trans_all_only_new":
+        # 全部内容-仅译文-重排版面
+        read_paragraph_text(document, texts)
+    elif trans_type=="trans_all_only_inherit":
+        # 全部内容-仅译文-重排版面/继承原版面
+        read_rune_text(document, texts)
+    elif trans_type=="trans_all_both_new":
+        # 全部内容-保留原文-重排版面
+        read_paragraph_text(document, texts)
+    elif trans_type=="trans_all_both_inherit":
+        # 全部内容-保留原文-继承原版面
+        read_rune_text(document, texts)
 
     # print(texts)
     # exit()
@@ -80,30 +78,33 @@ def start(trans):
         else:
             time.sleep(1)
     # print(texts)
-    print("翻译文本-结束")
+    # print("翻译文本-结束")
+
     text_count=0
-    current_texts=[]
-    for paragraph in document.paragraphs:
-        text_count+=write_run(paragraph.runs, texts)
-
-        if len(paragraph.hyperlinks)>0:
-            for hyperlink in paragraph.hyperlinks:
-                text_count+=write_run(hyperlink.runs, texts)
-
-    for table in document.tables:
-        for row in table.rows:
-            start_span=0
-            for cell in row.cells:
-                # start_span+=1
-                # if start_span==cell.grid_span:
-                #     start_span=0
-                    # text_count+=write_cell(cell, texts)
-                for paragraph in cell.paragraphs:
-                    text_count+=write_run(paragraph.runs, texts)
-
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            text_count+=write_run(hyperlink.runs, texts)
+    if trans_type=="trans_text_only_inherit":
+        # 仅文字-仅译文-继承原版面。
+        write_only_new(document, texts, text_count, True) # DONE
+    elif trans_type=="trans_text_only_new":
+        # 仅文字-仅译文-重排
+        write_paragraph_text(document, texts, text_count, True) #DONE
+    elif trans_type=="trans_text_both_new":
+        # 仅文字-保留原文-重排
+        write_both_new(document, texts, text_count, True) #DONE
+    elif trans_type=="trans_text_both_inherit":
+        # 仅文字-保留原文-继承原版面
+        write_rune_both(document, texts, text_count, True) #DONE
+    elif trans_type=="trans_all_only_new":
+        # 全部内容-仅译文-重排版面
+        write_paragraph_text(document, texts, text_count, False) #DONE
+    elif trans_type=="trans_all_only_inherit":
+        # 全部内容-仅译文-继承原版面
+        write_only_new(document, texts, text_count, False) #DONE
+    elif trans_type=="trans_all_both_new":
+        # 全部内容-保留原文-重排版面
+        write_both_new(document, texts, text_count, False) #DONE
+    elif trans_type=="trans_all_both_inherit":
+        # 全部内容-保留原文-继承原版面
+        write_rune_both(document, texts, text_count, False) #DONE
 
     # print("编辑文档-结束")
     # print(datetime.datetime.now())
@@ -118,17 +119,51 @@ def read_paragraph_text(document, texts):
     for paragraph in document.paragraphs:
         append_text(paragraph.text, texts)
 
-def write_paragraph_text(document, texts):
+    for table in document.tables:
+        for row in table.rows:
+            start_span=0
+            for cell in row.cells:
+                read_cell_text(cell, texts)
+
+def write_paragraph_text(document, texts, text_count, onlyText):
     for paragraph in document.paragraphs:
-        text=paragraph.text
-        if check_text(text) and len(texts)>0:
+        replace_paragraph_text(paragraph, texts, text_count, onlyText, False)
+
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                write_paragraph_text(cell, texts, text_count, onlyText)
+
+def write_both_new(document, texts, text_count, onlyText):
+    for paragraph in document.paragraphs:
+        replace_paragraph_text(paragraph, texts, text_count, onlyText, True)
+
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                write_both_new(cell, texts, text_count, onlyText)
+
+def read_cell_text(cell, texts):
+    for index,paragraph in enumerate(cell.paragraphs):
+        append_text(paragraph.text, texts)
+
+def write_cell_text(cell, texts):
+    for index,paragraph in enumerate(cell.paragraphs):
+        if check_text(paragraph.text) and len(texts)>0:
             item=texts.pop(0)
-            paragraph.text=item.get('text',"")
+            # paragraph.runs[0].text=item.get('text',"")
+            for index,run in enumerate(paragraph.runs):
+                if index==0:
+                    run.text=item.get('text',"")
+                else:
+                    run.clear()
 
 def read_rune_text(document, texts):
     for paragraph in document.paragraphs:
+        line_spacing=paragraph.paragraph_format.line_spacing
+        # print("line_spacing:",line_spacing)
         read_run(paragraph.runs, texts)
-        
+        # print(line_spacing_unit)
         if len(paragraph.hyperlinks)>0:
             for hyperlink in paragraph.hyperlinks:
                 read_run(hyperlink.runs, texts)
@@ -139,21 +174,21 @@ def read_rune_text(document, texts):
         for row in table.rows:
             start_span=0
             for cell in row.cells:
-                start_span+=1
-                # if start_span==cell.grid_span:
-                #     start_span=0
-                    # read_cell(cell, texts)
-                for index,paragraph in enumerate(cell.paragraphs):
-                    # print(index)
-                    # print(paragraph.text)
-                    read_run(paragraph.runs, texts)
+                read_cell_text(cell, texts)
+                # start_span+=1
+                # # if start_span==cell.grid_span:
+                # #     start_span=0
+                #     # read_cell(cell, texts)
+                # for index,paragraph in enumerate(cell.paragraphs):
 
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            read_run(hyperlink.runs, texts)
+                #     read_run(paragraph.runs, texts)
 
-def write_rune_text(document, texts):
-    text_count=0
+                #     if len(paragraph.hyperlinks)>0:
+                #         for hyperlink in paragraph.hyperlinks:
+                #             read_run(hyperlink.runs, texts)
+
+
+def write_only_new(document, texts, text_count, onlyText):
     for paragraph in document.paragraphs:
         text_count+=write_run(paragraph.runs, texts)
 
@@ -161,20 +196,54 @@ def write_rune_text(document, texts):
             for hyperlink in paragraph.hyperlinks:
                 text_count+=write_run(hyperlink.runs, texts)
 
+        if onlyText:
+            clear_image(paragraph)
+
     for table in document.tables:
         for row in table.rows:
             start_span=0
+            for cell in row.cells:
+                write_cell_text(cell, texts)
+                # start_span+=1
+                # if start_span==cell.grid_span:
+                #     start_span=0
+                    # text_count+=write_cell(cell, texts)
+                # for paragraph in cell.paragraphs:
+                #     text_count+=write_run(paragraph.runs, texts)
+
+                #     if len(paragraph.hyperlinks)>0:
+                #         for hyperlink in paragraph.hyperlinks:
+                #             text_count+=write_run(hyperlink.runs, texts)
+
+#保留原译文
+def write_rune_both(document, texts, text_count, onlyText):
+    for paragraph in document.paragraphs:
+        # print(paragraph.text)
+        if(len(paragraph.runs)>0):
+            paragraph.runs[-1].add_break()
+            add_paragraph_run(paragraph, paragraph.runs, texts, text_count)
+        if len(paragraph.hyperlinks)>0:
+            for hyperlink in paragraph.hyperlinks:
+                hyperlink.runs[-1].add_break()
+                add_paragraph_run(paragraph, hyperlink.runs, texts, text_count)
+        if onlyText:
+            clear_image(paragraph)
+       
+        # text_count+=write_run(paragraph.runs, texts)
+    for table in document.tables:
+        for row in table.rows:
+            # start_span=0
             for cell in row.cells:
                 # start_span+=1
                 # if start_span==cell.grid_span:
                 #     start_span=0
                     # text_count+=write_cell(cell, texts)
                 for paragraph in cell.paragraphs:
-                    text_count+=write_run(paragraph.runs, texts)
+                    replace_paragraph_text(paragraph, texts, text_count, onlyText, True)
 
                     if len(paragraph.hyperlinks)>0:
                         for hyperlink in paragraph.hyperlinks:
-                            text_count+=write_run(hyperlink.runs, texts)
+                            replace_paragraph_text(hyperlink, texts, text_count, onlyText, True)
 
 def read_run(runs,texts):
     # text=""
@@ -191,7 +260,8 @@ def read_run(runs,texts):
         #     texts.append({"text":text, "complete":False})
 
 def append_text(text, texts):
-    if check_text(text):        
+    if check_text(text):
+        # print(text)
         texts.append({"text":text, "complete":False})
 
 def check_text(text):
@@ -204,10 +274,11 @@ def write_run(runs,texts):
     text=""
     for index,run in enumerate(runs):
         text=run.text
-        if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
+        if check_text(text) and len(texts)>0:
             item=texts.pop(0)
             text_count+=item.get('count',0)
             run.text=item.get('text',"")
+        
         # if run.text=="":
         #     if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
         #         item=texts.pop(0)
@@ -231,8 +302,95 @@ def read_cell(cell,texts):
 def write_cell(cell,texts):
     text=cell.text
     text_count=0
-    if len(text)>0 and not common.is_all_punc(text) and len(texts)>0:
+    if check_text(text) and len(texts)>0:
         item=texts.pop(0)
         text_count+=item.get('count',0)
         cell.text=item.get('text',"")
     return text_count
+
+def add_paragraph_run(paragraph, runs, texts, text_count):
+    for index,run in enumerate(runs):
+        if check_text(run.text) and len(texts)>0:
+            item=texts.pop(0)
+            text_count+=item.get('count',0)
+            new_run=paragraph.add_run(item.get('text',""), run.style)
+            set_run_style(new_run, run)
+    set_paragraph_linespace(paragraph)
+
+def set_run_style(new_run, copy_run):
+    new_run.font.italic= copy_run.font.italic
+    new_run.font.strike= copy_run.font.strike
+    new_run.font.bold= copy_run.font.bold
+    new_run.font.size= copy_run.font.size
+    new_run.font.color.rgb= copy_run.font.color.rgb
+    new_run.underline= copy_run.underline
+    new_run.style= copy_run.style
+
+    # 字体名称设置需要特殊处理
+    new_run.font.name = '微软雅黑'
+    r = new_run._element.rPr.rFonts
+    r.set(qn('w:eastAsia'),'微软雅黑')
+
+def set_paragraph_linespace(paragraph):
+    if hasattr(paragraph, "paragraph_format"):
+        space_before=paragraph.paragraph_format.space_before
+        space_after=paragraph.paragraph_format.space_after
+        line_spacing=paragraph.paragraph_format.line_spacing
+        line_spacing_rule=paragraph.paragraph_format.line_spacing_rule
+        if space_before!=None:
+            paragraph.paragraph_format.space_before=space_before
+        if space_after!=None:
+            paragraph.paragraph_format.space_after=space_after
+        if line_spacing!=None:
+            paragraph.paragraph_format.line_spacing=line_spacing
+        if line_spacing_rule!=None:
+            paragraph.paragraph_format.line_spacing_rule=line_spacing_rule
+
+def check_image(run):
+    if run.element.find('.//w:drawing', namespaces=run.element.nsmap) is not None:
+        return True
+    return False
+
+# 去除照片
+def clear_image(paragraph):
+    for run in paragraph.runs:
+        if check_image(run):
+            run.clear()
+
+def replace_paragraph_text(paragraph, texts, text_count, onlyText, appendTo):
+    text=paragraph.text
+    if check_text(text) and len(texts)>0:
+        item=texts.pop(0)
+        trans_text=item.get('text',"")
+        if appendTo:
+            if len(paragraph.runs)>0:
+                paragraph.runs[-1].add_break()
+                paragraph.runs[-1].add_text(trans_text)
+            elif len(paragraph.hyperlinks)>0:
+                paragraph.hyperlinks[-1].runs[-1].add_break()
+                paragraph.hyperlinks[-1].runs[-1].add_text(trans_text)
+        else:
+            replaced=False
+            if len(paragraph.runs)>0:
+                for index,run in enumerate(paragraph.runs):
+                    if not check_image(run):
+                        if  not replaced:
+                            run.text=trans_text
+                            replaced=True
+                        else:
+                            run.clear()
+            elif len(paragraph.hyperlinks)>0:
+                for hyperlink in paragraph.hyperlinks:
+                    for index,run in enumerate(hyperlink.runs):
+                        if not check_image(run):
+                            if  not replaced:
+                                run.text=trans_text
+                                replaced=True
+                            else:
+                                run.clear()
+
+        text_count+=item.get('count',0)
+        set_paragraph_linespace(paragraph)
+    if onlyText:
+        clear_image(paragraph)
+        

@@ -109,7 +109,7 @@ class TranslateController extends BaseAuthController {
         $process_file=$storage_path.'/process/'.$uuid.'.txt';
         $lang=$params['lang'];
         $model=$params['model'];
-        $type=$params['type'];
+        $type=(!empty($params['type']) && is_array($params['type'])) ? array_pop($params['type']) : '';
         $backup_model=$params['backup_model'] ?? '';
         $system=str_replace('{target_lang}', $lang, $params['system']);
         $threads=$params['threads'];
@@ -139,7 +139,7 @@ class TranslateController extends BaseAuthController {
         ]);
         $m_translate->startTranslate($id);
         echo "python3 $translate_main $uuid $storage_path".PHP_EOL;
-        $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
+        $cmd = shell_exec("nohup python3 $translate_main $uuid $storage_path &");
         echo $cmd;
         // if($this->checkEndTranslate($uuid)){
         //     $m_translate->endTranslate($id, filesize($target_storage_path));

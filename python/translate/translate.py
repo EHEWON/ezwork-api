@@ -34,7 +34,7 @@ def get(trans, event,texts, index):
     except openai.APIConnectionError as e:
         use_backup_model(trans, event,texts, index, "请求无法与openai服务器或建立安全连接")
     except openai.PermissionDeniedError as e:
-        use_backup_model(trans, event,texts, index, "访问权限被禁止")
+        use_backup_model(trans, event,texts, index, "令牌额度不足")
     except openai.RateLimitError as e:
         use_backup_model(trans, event,texts, index, "访问速率达到限制,10分钟后再试")
     except openai.InternalServerError as e:
@@ -147,4 +147,5 @@ def use_backup_model(trans, event,texts, index, message):
     else:
         if not event.is_set():
             error(trans['id'],trans['process_file'], message)
+            print(message)
         event.set()
