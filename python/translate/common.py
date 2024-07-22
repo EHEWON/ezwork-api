@@ -1,6 +1,9 @@
 import string
 import uuid
 import datetime
+import os
+import platform
+import subprocess
 
 def is_all_punc(strings):
     if isinstance(strings, datetime.time):
@@ -43,3 +46,18 @@ def display_spend(start_time,end_time):
 def random_uuid(length):
     result = str(uuid.uuid4())[:length]
     return result
+
+
+def find_command_location(command):
+    if platform.system() == 'Windows':
+        cmd = 'where'
+    else:
+        cmd = 'which'
+    try:
+        print(command)
+        location = subprocess.check_output([cmd, command]).strip()
+        print(location.decode("utf-8"))
+        return location.decode('utf-8')  # 解码为字符串
+    except subprocess.CalledProcessError as e:
+        print(e)
+        raise Exception("未安装"+command)

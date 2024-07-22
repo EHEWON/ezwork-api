@@ -8,6 +8,7 @@ import translate
 import word
 import excel
 import powerpoint
+import pdf
 import pymysql
 import db
 
@@ -46,8 +47,9 @@ def main():
     trans['file_path']=file_path
     trans['target_file']=target_file
     trans['process_file']=process_file
-
+    trans['storage_path']=storage_path
     extension = origin_filename[origin_filename.rfind('.'):]
+    trans['extension']=extension
     item_count=0
     spend_time=''
     try:
@@ -60,6 +62,8 @@ def main():
             status=excel.start(trans)
         elif extension=='.ppt' or extension == '.pptx':
             status=powerpoint.start(trans)
+        elif extension == '.pdf':
+            status=pdf.start(trans)
         if status:
             print("success")
             # print(item_count + ";" + spend_time)

@@ -265,7 +265,7 @@ def append_text(text, texts):
         texts.append({"text":text, "complete":False})
 
 def check_text(text):
-    return len(text)>0 and not common.is_all_punc(text) 
+    return text!=None and len(text)>0 and not common.is_all_punc(text) 
 
 def write_run(runs,texts):
     text_count=0

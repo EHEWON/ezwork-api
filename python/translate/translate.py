@@ -16,12 +16,17 @@ def get(trans, event,texts, index):
     backup_model=trans['backup_model']
     prompt=trans['prompt']
     process_file=trans['process_file']
+    extension=trans['extension']
     text=texts[index]
+    # print(text)
     # 创建一个对话列表
     # print("翻译{}--开始".format(str(index)))
     # print(datetime.datetime.now())
     try:
-        content=req(text['text'], target_lang, model, prompt)
+        if extension==".pdf":
+            content=translate_html(text['text'], target_lang, model, prompt)
+        else:
+            content=get(text['text'], target_lang, model, prompt)
         text['count']=count_text(text['text'])
         if check_translated(content):
             text['text']=content
@@ -42,7 +47,7 @@ def get(trans, event,texts, index):
     except openai.APIStatusError as e:
         use_backup_model(trans, event,texts, index, e.response)
     except Exception as e:
-        # print(e)
+        print(e)
         # traceback.print_exc()
         text['complete']=True
         # print("translate error")
@@ -67,6 +72,21 @@ def req(text,target_lang,model,prompt):
     #     print(choices.message.content)
     content=response.choices[0].message.content
     # print(content)
+    return content
+
+def translate_html(html,target_lang,model,prompt):
+    message = [
+        {"role": "system", "content": "把下面的html翻译成{},只返回翻译后的内容".format(target_lang)},
+        {"role": "user", "content": html}
+    ]
+    # print(openai.base_url)
+    response = openai.chat.completions.create(
+        model=model,  # 使用GPT-3.5版本
+        messages=message
+    )
+    # for choices in response.choices:
+    #     print(choices.message.content)
+    content=response.choices[0].message.content
     return content
 
 def check(model):
