@@ -44,6 +44,14 @@ def main():
     # 进度保存文件
     process_file= storage_path+"/process/"+uuid+".txt"
 
+    origin_path_dir=os.path.dirname(file_path)
+    target_path_dir=os.path.dirname(target_file)
+    if not os.path.exists(origin_path_dir):
+        os.makedirs(origin_path_dir)
+    
+    if not os.path.exists(target_path_dir):
+        os.makedirs(target_path_dir)
+
     trans['file_path']=file_path
     trans['target_file']=target_file
     trans['process_file']=process_file

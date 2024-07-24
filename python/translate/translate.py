@@ -1,4 +1,5 @@
 import openai
+import tiktoken
 import datetime
 import common
 import traceback
@@ -6,6 +7,7 @@ import re
 import os
 import pymysql
 import db
+from pathlib import Path
 
 def get(trans, event,texts, index):
     if event.is_set():
@@ -24,7 +26,10 @@ def get(trans, event,texts, index):
     # print(datetime.datetime.now())
     try:
         if extension==".pdf":
-            content=translate_html(text['text'], target_lang, model, prompt)
+            if text['type']=="text":
+                content=translate_html(text['text'], target_lang, model, prompt)
+            else:
+                content=get_content_by_image(text['text'], target_lang)
         else:
             content=get(text['text'], target_lang, model, prompt)
         text['count']=count_text(text['text'])
@@ -88,6 +93,39 @@ def translate_html(html,target_lang,model,prompt):
     #     print(choices.message.content)
     content=response.choices[0].message.content
     return content
+
+def get_content_by_image(base64_image,target_lang):
+    # print(image_path)
+    # file_object = openai.files.create(file=Path(image_path), purpose="这是一张图片")
+    # print(file_object)
+    message = [
+        {"role": "system", "content": "你是一个图片识别大师,专门识别图片中的文本"},
+        {"role": "user", "content": [
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": base64_image
+                }
+            },
+            {
+                "type": "text",
+                # "text": "读取图片链接并提取其中的文本数据,只返回识别后的数据，将文本翻译成英文,并按照图片中的文字布局返回html。只包含body(不包含body本身)部分",
+                "text": f"读取图片链接并提取其中的文本数据，将文本翻译成{target_lang},只返回翻译后的文本",
+            }
+        ]}
+    ]
+    # print(message)
+    # print(openai.base_url)
+    response = openai.chat.completions.create(
+        model="gpt-4o-mini",  # 使用GPT-3.5版本
+        messages=message
+    )
+    # for choices in response.choices:
+    #     print(choices.message.content)
+    content=response.choices[0].message.content
+    # return content
+    # print(''.join(map(lambda x: f'<p>{x}</p>',content.split("\n"))))
+    return ''.join(map(lambda x: f'<p>{x}</p>',content.split("\n")))
 
 def check(model):
     try:
@@ -158,6 +196,10 @@ def check_translated(content):
     else:
         return True
 
+
+def get_model_tokens(model,content):
+    encoding=tiktoken.encoding_for_model(model)
+    return en(encoding.encode(content))
 
 def use_backup_model(trans, event,texts, index, message):
     if trans['backup_model']!=None and trans['backup_model']!="":

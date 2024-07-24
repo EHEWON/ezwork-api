@@ -11,6 +11,9 @@ from urllib.parse import quote
 import pdfkit
 import subprocess
 import platform
+import base64
+from io import BytesIO
+from PIL import Image
 # from weasyprint import HTML
 
 def start(trans):
@@ -43,8 +46,9 @@ def start(trans):
 
     texts=[]
     text_count=0
-
-    read_page_html(src_pdf, texts)
+    # translate.get_models()
+    # exit()
+    read_page_html(src_pdf, texts, trans)
     # print(texts)
     # exit()
     # # for page in src_pdf:
@@ -79,7 +83,7 @@ def start(trans):
     #     for txt in txt_blks:
     #         text_tmp = ''.join([s['text'] for l in txt['lines'] for s in l['spans']])
     #         text_tmp = re.sub('[@#$%^&*\'\"\n\r\t]', ' ', text_tmp).strip()
-    #         append_text(text_tmp,"", texts)
+    #         append_text(text_tmp, True, texts)
 
         
     #     tables = page.find_tables()
@@ -88,7 +92,7 @@ def start(trans):
     #         rows=table.extract()
     #         for row in table.extract():
     #             for cell in row:
-    #                 append_text(cell, texts)
+    #                 append_text(cell, True, texts)
 
     max_run=max_threads if len(texts)>max_threads else len(texts)
     event=threading.Event()
@@ -183,12 +187,23 @@ def start(trans):
 
 # def read_to_html(pages):
 
-def read_page_html(pages, texts):
-    for page in pages:
+def read_page_html(pages, texts, trans):
+    storage_path=trans['storage_path']
+    uuid=trans['uuid']
+    for index,page in enumerate(pages):
         html=page.get_text("xhtml")
         # print(html)
         # print(html.decode('utf-8'))
-        append_text(html,'', texts)
+        images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
+        for i,image in enumerate(images):
+            # image_path=os.path.dirname(trans['target_file'])+'/'+str(index)+"-"+str(i)+"."+image[0]
+            # save_image(image[0], image_path)
+            append_text(image, 'image', texts)
+
+        html=re.sub(r"<img.*?data:image/(\w+);base64,([^\"]+).*?>", "", html)
+        append_text(html,'text', texts)
+
+
    
 
 def write_to_html_file(html_path,texts):
@@ -214,13 +229,13 @@ def read_block_text(pages,texts):
             current_x0=block[0]
             # 对于每个文本块，分行并读取
             if block[5]==0 or abs(current_x1-last_x1)>12 or abs(current_x0-last_x0)>12:
-                append_text(text, "", texts)
+                append_text(text, "text", texts)
                 text=block[4].replace("\n","")
             else:
                 text=text+(block[4].replace("\n",""))
             last_x1=block[2]
             last_x0=block[0]
-    append_text(text, "", texts)
+    append_text(text, "text", texts)
 
 def write_block_text(pages,newpdf,texts):
     text=""
@@ -264,7 +279,7 @@ def read_row(pages,texts):
         for block in page.get_text("blocks"):
             # 对于每个文本块，分行并读取
             if block[5]==0:
-                append_text(text, block, texts)
+                append_text(text, 'text', texts)
                 text=block[4]
             else:
                 text=text+block[4]
@@ -280,10 +295,10 @@ def write_row(newpdf, texts, page_width, page_height):
 
 
 
-def append_text(text, block, texts):
+def append_text(text, content_type, texts):
     if check_text(text):
         # print(text)
-        texts.append({"text":text,"block":block, "complete":False})
+        texts.append({"text":text,"type":content_type, "complete":False})
 
 
 def check_text(text):
@@ -369,4 +384,25 @@ def print_texts(texts):
     for item in texts:
         print(item.get("text"))
 
+# def save_image(base64_string, path):
+#     if base64_string.startswith("data:"):
+#         parts=base64_string.split(";")
+#         ext=parts[0].split("/")[1]
+#         base64_data=parts[1]
+#         image_data = base64.b64decode(base64_data)
+#         # 将字节数据写入内存中的文件对象
+#         image_file = BytesIO(image_data)
+#         # 从内存中的文件对象创建Image对象
+#         image = Image.open(image_file)
+#         # 保存图片到文件系统
+#         image.save(path, ext)
+
+def save_image(base64_data, path):
+    image_data = base64.b64decode(base64_data)
+    # 将字节数据写入内存中的文件对象
+    image_file = BytesIO(image_data)
+    # 从内存中的文件对象创建Image对象
+    image = Image.open(image_file)
+    # 保存图片到文件系统
+    image.save(path)
 
