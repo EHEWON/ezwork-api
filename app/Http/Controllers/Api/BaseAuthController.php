@@ -32,8 +32,8 @@ abstract class BaseAuthController extends BaseController {
         parent::__construct();
 
         $method=Request::method();
-
-        if(in_array($method, $this->skip_methods)) return;
+        $action=Request::segment(3);
+        if(in_array($action, $this->skip_methods)) return;
 
         $token=Request::header('token');
 
