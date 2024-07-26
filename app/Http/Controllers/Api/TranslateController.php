@@ -128,6 +128,7 @@ class TranslateController extends BaseAuthController {
         $threads=$params['threads'];
         $api_url=$params['api_url'] ?? '';
         $api_key=$params['api_key'] ?? '';
+        $m_setting=new Setting();
         if($params['server']=='member'){
             $api_setting=$m_setting->getSettingByGroup('api_setting');
             if(!empty($api_setting)){
