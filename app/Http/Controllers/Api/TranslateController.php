@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
  */
 class TranslateController extends BaseAuthController {
 
+    protected $skip_methods=['setting'];
+
     public function getMessages(){
         return [
             'start'=>[
