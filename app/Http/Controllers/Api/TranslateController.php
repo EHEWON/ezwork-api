@@ -129,8 +129,14 @@ class TranslateController extends BaseAuthController {
         $api_url=$params['api_url'] ?? '';
         $api_key=$params['api_key'] ?? '';
         if($params['server']=='member'){
-            $api_url=config('openai.api_url');
-            $api_key=config('openai.api_key');
+            $api_setting=$m_setting->getSettingByGroup('api_setting');
+            if(!empty($api_setting)){
+                $api_url=$api_setting['api_url'];
+                $api_key=$api_setting['api_key'];
+            }else{
+                $api_url=config('openai.api_url');
+                $api_key=config('openai.api_key');
+            }
         }
 
         $m_translate=new Translate();
