@@ -19,16 +19,7 @@ from PIL import Image
 def start(trans):
     uuid=trans['uuid']
     html_path=trans['storage_path']+'/uploads/'+uuid+'.html'
-    # remove_newlines_from_html(html_path)
-    # exit()
     # print(trans['storage_path']+'/uploads/pdf.html')
-    # HTML(trans['storage_path']+'/uploads/pdf.html').write_pdf(trans['storage_path']+'/uploads/pdf.pdf')
-    # with open(html_path) as f:
-    #     pdfkit.from_file(f, pdf_path,options={"enable-local-file-access":True})
-    # exit()
-
-    # translate.translate_html('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>change account</title></head><body><p>Hello <strong>{{$user["email"]}}</strong>,</p><p>You are requesting a verification code change account , the verification code is valid for {{$user["expired"]}}, please use it as soon as possible. Please ignore this email if you are not doing it yourself.</p><p><strong>{{$user["code"]}}</strong></p><p>EHEWON - Cross-border Digital Supply Chain Service PlatForm.</p><p><a href="{{env("MALL_URL")}}" target="_blank">{{env("MALL_URL_NO_HTTP")}}</a></p><p><a href="{{env("MALL_URL")}}" target="_blank"><img style="width:128px" src="{{env("FILE_HOST")}}/group1/M00/00/00/rBFIw2I65zKAHbkFAADxj2CkeEU808.png"></a></p></body></html>',trans['model'])
-    # subprocess.run(['pdf2htmlEX', '--dest-file', html_path, pdf_path])
     # exit()
     # 允许的最大线程
     # print(trans)
@@ -49,50 +40,7 @@ def start(trans):
     # translate.get_models()
     # exit()
     read_page_html(src_pdf, texts, trans)
-    # print(texts)
-    # exit()
-    # # for page in src_pdf:
-    # #     # 获取页面的文本块
-    # #     dicts=page.get_text("json")
-    # #     print(dicts)
-    # # exit()
-    # page_width=0
-    # page_height=0
-
-    # read_block_text(src_pdf,texts)
-    # # read_block_text(src_pdf)
-    # # return False
-    # newpdf = fitz.open()
-    # print_texts(texts)
-    # write_block_text(src_pdf, newpdf, texts)
-
-    # read_row(src_pdf, texts)
-    # newpdf = fitz.open()
-    # write_row(newpdf, texts, src_pdf[0].rect.width, src_pdf[0].rect.height);
-
-    # print(texts)
-    # print(trans['target_file'])
-    # newpdf.save(trans['target_file'])
-    # newpdf.close()
     src_pdf.close()
-    # texts=[]
-    # for p, page in enumerate(src_pdf):
-    #     blocks = page.get_text('dict')['blocks']
-    #     # 1.3 文字
-    #     txt_blks = [b for b in blocks if b['type'] != 1]
-    #     for txt in txt_blks:
-    #         text_tmp = ''.join([s['text'] for l in txt['lines'] for s in l['spans']])
-    #         text_tmp = re.sub('[@#$%^&*\'\"\n\r\t]', ' ', text_tmp).strip()
-    #         append_text(text_tmp, True, texts)
-
-        
-    #     tables = page.find_tables()
-    #     # data = []
-    #     for table in tables.tables:
-    #         rows=table.extract()
-    #         for row in table.extract():
-    #             for cell in row:
-    #                 append_text(cell, True, texts)
 
     max_run=max_threads if len(texts)>max_threads else len(texts)
     event=threading.Event()
@@ -122,62 +70,12 @@ def start(trans):
 
     # print(texts)
 
-    # new_pdf = fitz.open()
-    # for p, page in enumerate(src_pdf):
-
-    #     # 1.1 创建大小相同的新页面
-    #     new_page = new_pdf.new_page(width=page.rect.width, height=page.rect.height)
-
-    #     blocks = page.get_text('dict')['blocks']
-    #     # 1.2 图片
-    #     img_blks = [b for b in blocks if b['type'] == 1]
-    #     for img in img_blks:
-    #         new_page.insert_image(img['bbox'], stream=img['image'])
-
-    #     # 1.3 文字
-    #     txt_blks = [b for b in blocks if b['type'] != 1]
-    #     for txt in txt_blks:
-    #         text_tmp = ''.join([s['text'] for l in txt['lines'] for s in l['spans']])
-    #         text_tmp = re.sub('[@#$%^&*\'\"\n\r\t]', ' ', text_tmp).strip()
-    #         if check_text(text) and len(texts)>0:
-    #             item=texts.pop(0)
-    #             trans_text=item.get('text',"")
-    #             # print(text_tmp)
-    #             # print(trans_text)
-    #             # print(txt['bbox'])
-    #             draw_text_avoid_overlap(new_page, trans_text,txt['bbox'][0],txt['bbox'][1], 10)
-    #             # new_page.insert_textbox(txt['bbox'], trans_text,fontsize=10)
-    #             # new_page.set_text(trans_text)
-
-        
-    #     tables = page.find_tables()
-    #     for table in tables.tables:
-    #         rows=table.extract()
-    #         bbox=table.bbox
-    #         for ri,row in enumerate(rows):
-    #             for ci,cell in enumerate(row):
-    #                 if check_text(cell) and len(texts)>0:
-    #                     item=texts.pop(0)
-    #                     trans_text=item.get('text',"")
-    #                     print(trans_text)
-    #                     print(cell)
-    #                     rows[ri][ci]=trans_text
-    #         print(rows)
-    #         print(bbox)
-    #         draw_table(new_page, rows, bbox[0], bbox[1], bbox[2]-bbox[0], 12)
-
-
-
-
     write_to_html_file(html_path, texts)
     config = pdfkit.configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")
     with open(html_path) as f:
         pdfkit.from_file(f, trans['target_file'],options={"enable-local-file-access":True}, configuration=config)
 
     # print(trans['target_file'])
-    # new_pdf.save(trans['target_file'])
-    # new_pdf.close()
-    # src_pdf.close()
 
     end_time = datetime.datetime.now()
     spend_time=common.display_spend(start_time, end_time)
@@ -193,7 +91,6 @@ def read_page_html(pages, texts, trans):
     for index,page in enumerate(pages):
         html=page.get_text("xhtml")
         # print(html)
-        # print(html.decode('utf-8'))
         images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
         for i,image in enumerate(images):
             # image_path=os.path.dirname(trans['target_file'])+'/'+str(index)+"-"+str(i)+"."+image[0]
