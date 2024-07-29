@@ -65,7 +65,7 @@ class DocTranslate extends Command{
             $storage_path=storage_path('app/public');
 
             $m_translate->startTranslate($translate_id);
-            $cmd = shell_exec("nohup python3 $translate_main $uuid $storage_path &");
+            $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
             echo $cmd;
             if($this->checkEndTranslate($uuid)){
                 // $m_translate->endTranslate($translate_id, filesize($target_file));

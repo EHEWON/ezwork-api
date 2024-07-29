@@ -26,3 +26,9 @@ Route::post('/image', [ImageController::class, 'index']);
 
 Route::get('/setting/notice', [SettingController::class, 'notice']);
 Route::post('/setting/notice', [SettingController::class, 'notice_setting']);
+
+Route::get('/setting/api', [SettingController::class, 'get_api']);
+Route::post('/setting/api', [SettingController::class, 'set_api']);
+
+Route::get('/setting/other', [SettingController::class, 'get_other']);
+Route::post('/setting/other', [SettingController::class, 'set_other']);

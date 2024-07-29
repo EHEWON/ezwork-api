@@ -8,7 +8,7 @@ return [
     'lang_required'=>'请选择要翻译成的语言',
     'type_required'=>'请选择译文形式',
     'uuid_required'=>'请刷新页面尝试',
-    'system_required'=>'请填写提示语',
+    'prompt_required'=>'请填写提示语',
     'threads_required'=>'请填写线程数量',
     'file_name_required'=>'请上传文件',
     'file_path_required'=>'请上传文件',

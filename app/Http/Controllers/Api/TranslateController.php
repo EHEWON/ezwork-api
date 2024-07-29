@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Models\Translate;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 
@@ -11,6 +12,8 @@ use Illuminate\Support\Str;
  * 翻译记录
  */
 class TranslateController extends BaseAuthController {
+
+    protected $skip_methods=['setting'];
 
     public function getMessages(){
         return [
@@ -23,7 +26,7 @@ class TranslateController extends BaseAuthController {
                 'lang.required'=>Lang::get('translate.lang_required'),
                 'type.required'=>Lang::get('translate.type_required'),
                 'uuid.required'=>Lang::get('translate.uuid_required'),
-                'system.required'=>Lang::get('translate.system_required'),
+                'prompt.required'=>Lang::get('translate.prompt_required'),
                 'threads.required'=>Lang::get('translate.threads_required'),
                 'file_name.required'=>Lang::get('translate.file_name_required'),
                 'file_path.required'=>Lang::get('translate.file_path_required'),
@@ -51,7 +54,7 @@ class TranslateController extends BaseAuthController {
                 'lang'=>'required',
                 'type'=>'required',
                 'uuid'=>'required',
-                'system'=>'required',
+                'prompt'=>'required',
                 'threads'=>'required',
                 'file_path'=>'required',
                 'file_name'=>'required',
@@ -77,6 +80,16 @@ class TranslateController extends BaseAuthController {
         $limit=$params['limit'] ?? 10;
         $data=$m_translate->getTranslates($params, $page, $limit);
         ok($data);
+    }
+
+    public function setting(){
+        $m_setting=new Setting();
+        $api_setting=$m_setting->getSettingByGroup('api_setting');
+        $other_setting=$m_setting->getSettingByGroup('other_setting');
+        $api_setting['models']=explode(',', $api_setting['models'] ?? '');
+        unset($api_setting['api_url']);
+        unset($api_setting['api_key']);
+        return ok(array_merge($api_setting, $other_setting));
     }
 
     /**
@@ -111,13 +124,20 @@ class TranslateController extends BaseAuthController {
         $model=$params['model'];
         $type=(!empty($params['type']) && is_array($params['type'])) ? array_pop($params['type']) : '';
         $backup_model=$params['backup_model'] ?? '';
-        $system=str_replace('{target_lang}', $lang, $params['system']);
+        $prompt=str_replace('{target_lang}', $lang, $params['prompt']);
         $threads=$params['threads'];
         $api_url=$params['api_url'] ?? '';
         $api_key=$params['api_key'] ?? '';
+        $m_setting=new Setting();
         if($params['server']=='member'){
-            $api_url=config('openai.api_url');
-            $api_key=config('openai.api_key');
+            $api_setting=$m_setting->getSettingByGroup('api_setting');
+            if(!empty($api_setting)){
+                $api_url=$api_setting['api_url'];
+                $api_key=$api_setting['api_key'];
+            }else{
+                $api_url=config('openai.api_url');
+                $api_key=config('openai.api_key');
+            }
         }
 
         $m_translate=new Translate();
@@ -132,7 +152,7 @@ class TranslateController extends BaseAuthController {
             'model'=>$model,
             'type'=>$type,
             'backup_model'=>$backup_model,
-            'prompt'=>$system,
+            'prompt'=>$prompt,
             'api_url'=>$api_url,
             'api_key'=>$api_key,
             'threads'=>$threads,
