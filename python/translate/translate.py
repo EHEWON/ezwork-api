@@ -99,7 +99,7 @@ def get_content_by_image(base64_image,target_lang):
     # file_object = openai.files.create(file=Path(image_path), purpose="这是一张图片")
     # print(file_object)
     message = [
-        {"role": "system", "content": "你是一个图片识别大师,专门识别图片中的文本"},
+        {"role": "system", "content": "你是一个图片ORC识别专家"},
         {"role": "user", "content": [
             {
                 "type": "image_url",
@@ -110,14 +110,15 @@ def get_content_by_image(base64_image,target_lang):
             {
                 "type": "text",
                 # "text": "读取图片链接并提取其中的文本数据,只返回识别后的数据，将文本翻译成英文,并按照图片中的文字布局返回html。只包含body(不包含body本身)部分",
-                "text": f"读取图片链接并提取其中的文本数据，将文本翻译成{target_lang},只返回翻译后的文本",
+                # "text": f"提取图片中的所有文字数据，将提取的文本翻译成{target_lang},只返回原始文本和翻译结果",
+                "text": f"提取图片中的所有文字数据,将提取的文本翻译成{target_lang},只返回翻译结果",
             }
         ]}
     ]
     # print(message)
     # print(openai.base_url)
     response = openai.chat.completions.create(
-        model="gpt-4o-mini",  # 使用GPT-3.5版本
+        model="gpt-4o",  # 使用GPT-3.5版本
         messages=message
     )
     # for choices in response.choices:

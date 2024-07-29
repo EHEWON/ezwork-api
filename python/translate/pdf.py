@@ -12,8 +12,8 @@ import pdfkit
 import subprocess
 import platform
 import base64
-from io import BytesIO
-from PIL import Image
+# from io import BytesIO
+# from PIL import Image
 # from weasyprint import HTML
 
 def start(trans):
@@ -42,13 +42,16 @@ def start(trans):
     read_page_html(src_pdf, texts, trans)
     src_pdf.close()
 
+    # print(texts)
+    # exit()
+
     max_run=max_threads if len(texts)>max_threads else len(texts)
     event=threading.Event()
     before_active_count=threading.activeCount()
     while run_index<=len(texts)-1:
         if threading.activeCount()<max_run+before_active_count:
             if not event.is_set():
-                print("run_index:",run_index)
+                # print("run_index:",run_index)
                 thread = threading.Thread(target=translate.get,args=(trans,event,texts,run_index))
                 thread.start()
                 run_index+=1
@@ -88,24 +91,23 @@ def start(trans):
 def read_page_html(pages, texts, trans):
     storage_path=trans['storage_path']
     uuid=trans['uuid']
-    for index,page in enumerate(pages):
-        html=page.get_text("xhtml")
-        # print(html)
-        images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
-        for i,image in enumerate(images):
-            # image_path=os.path.dirname(trans['target_file'])+'/'+str(index)+"-"+str(i)+"."+image[0]
-            # save_image(image[0], image_path)
-            append_text(image, 'image', texts)
+    if is_scan_pdf(pages):
+        for index,page in enumerate(pages):
+            html=page.get_text("xhtml")
+            images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
+            for i,image in enumerate(images):
+                append_text(image, 'image', texts)
 
-        html=re.sub(r"<img.*?data:image/(\w+);base64,([^\"]+).*?>", "", html)
-        append_text(html,'text', texts)
-
-
-   
+    else:
+        for index,page in enumerate(pages):
+            html=page.get_text("xhtml")
+            # images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
+            # for i,image in enumerate(images):
+            append_text(html,'text', texts)
 
 def write_to_html_file(html_path,texts):
     with open(html_path, 'w+') as f:
-        f.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>')
+        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>')
         for item in texts:
             f.write(item.get("text", ""))
         f.write('</body></html>')
@@ -273,33 +275,28 @@ def is_paragraph(block):
 
 def is_next_line_continuation(page, current_line, next_line_index):
     # 判断下一行是否是当前行的继续
-    print(current_line)
-    print(next_line_index)
     return abs(next_line_index - current_line) < 0.1
 
 def print_texts(texts):
     for item in texts:
         print(item.get("text"))
 
-# def save_image(base64_string, path):
-#     if base64_string.startswith("data:"):
-#         parts=base64_string.split(";")
-#         ext=parts[0].split("/")[1]
-#         base64_data=parts[1]
-#         image_data = base64.b64decode(base64_data)
-#         # 将字节数据写入内存中的文件对象
-#         image_file = BytesIO(image_data)
-#         # 从内存中的文件对象创建Image对象
-#         image = Image.open(image_file)
-#         # 保存图片到文件系统
-#         image.save(path, ext)
+def is_scan_pdf(pages):
+     for index,page in enumerate(pages):
+        html=page.get_text("xhtml")
+        images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
+        text=page.get_text()
+        if text=="" and len(images)>0:
+            return True
+        else:
+            return False
 
-def save_image(base64_data, path):
-    image_data = base64.b64decode(base64_data)
-    # 将字节数据写入内存中的文件对象
-    image_file = BytesIO(image_data)
-    # 从内存中的文件对象创建Image对象
-    image = Image.open(image_file)
-    # 保存图片到文件系统
-    image.save(path)
+# def save_image(base64_data, path):
+#     image_data = base64.b64decode(base64_data)
+#     # 将字节数据写入内存中的文件对象
+#     image_file = BytesIO(image_data)
+#     # 从内存中的文件对象创建Image对象
+#     image = Image.open(image_file)
+#     # 保存图片到文件系统
+#     image.save(path)
 
