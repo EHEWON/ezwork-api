@@ -58,6 +58,7 @@ def main():
     trans['storage_path']=storage_path
     extension = origin_filename[origin_filename.rfind('.'):]
     trans['extension']=extension
+    trans['run_complete']=True
     item_count=0
     spend_time=''
     try:

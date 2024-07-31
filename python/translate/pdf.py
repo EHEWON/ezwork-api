@@ -12,13 +12,47 @@ import pdfkit
 import subprocess
 import platform
 import base64
+from docx import Document
+import docx2pdf
+import pdf2docx
+import word
 # from io import BytesIO
 # from PIL import Image
 # from weasyprint import HTML
 
 def start(trans):
+    # config = pdfkit.configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")
+    # pdfkit.from_file("/Users/lemount/Downloads/red-html.html", trans['target_file'],options={"enable-local-file-access":True}, configuration=config)
+    # exit()
+    # doc=Document("/Users/lemount/Downloads/小学科目二语文教学设计模板.docx")
+    # doc.save("/Users/lemount/Downloads/test222.pdf")
+    # docx2pdf.convert("/Users/lemount/Downloads/小学科目二语文教学设计模板.docx", "/Users/lemount/Downloads/test222.pdf")
+    # exit()
+    start_time = datetime.datetime.now()
+    origin_docx_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
+    target_docx_path=re.sub(r"\.pdf",".docx",trans['target_file'], flags=re.I)
+    pdf_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
+    pdftodocx(trans['file_path'], origin_docx_path)
+    word_trans=trans
+    word_trans['file_path']=origin_docx_path
+    word_trans['target_file']=target_docx_path
+    word_trans['run_complete']=False;
+    word_trans['extension']='.docx';
+    print(trans)
+    text_count=0
+    if word.start(trans):
+        docxtopdf(target_docx_path, os.path.dirname(target_docx_path))
+        end_time = datetime.datetime.now()
+        spend_time=common.display_spend(start_time, end_time)
+        translate.complete(trans,text_count,spend_time)
+        return True
+    return False
+
+    exit()
     uuid=trans['uuid']
-    html_path=trans['storage_path']+'/uploads/'+uuid+'.html'
+    html_path=trans['storage_path']+'/uploads/'+uuid
+    trans['html_path']=html_path
+    # read_pdf_html(trans['file_path'], html_path)
     # print(trans['storage_path']+'/uploads/pdf.html')
     # exit()
     # 允许的最大线程
@@ -39,10 +73,12 @@ def start(trans):
     text_count=0
     # translate.get_models()
     # exit()
-    read_page_html(src_pdf, texts, trans)
+    # read_page_html(src_pdf, texts, trans)
+    # read_pdf_html(src_pdf, texts, trans)
+    pdftohtml(trans['file_path'], html_path, texts)
     src_pdf.close()
 
-    # print(texts)
+    print(texts)
     # exit()
 
     max_run=max_threads if len(texts)>max_threads else len(texts)
@@ -291,6 +327,46 @@ def is_scan_pdf(pages):
         else:
             return False
 
+def read_pdf_html(pages, texts, trans):
+    for index,page in enumerate(pages):
+        target_html="{}-{}.html".format(trans['html_path'], page_index)
+        if os.path.exists(target_html):
+            os.remove(target_html)
+        subprocess.run(["pdftohtml","-c","-l", page_index, trans['file_path'], trans['html_path']])
+        if not os.path.exists(target_html):
+            raise Exception("无法生成html")
+        # append_text(html,'text', texts)
+
+
+def pdftohtml(pdf_path, html_path,texts):
+    target_html="{}-html.html".format(html_path)
+    if os.path.exists(target_html):
+        os.remove(target_html)
+    subprocess.run(["/opt/homebrew/bin/pdftohtml","-c","-s", pdf_path, html_path])
+    if not os.path.exists(target_html):
+        raise Exception("无法生成html")
+    with open(target_html, 'r') as f:
+        content=f.read()
+        print(content)
+        append_text(content, 'text', texts)
+
+
+def pdftodocx(pdf_path, docx_path):
+    if os.path.exists(docx_path):
+        os.remove(docx_path)
+    print(pdf_path)
+    cv = pdf2docx.Converter(pdf_path)
+    cv.convert(docx_path, multi_processing=True)
+    cv.close()
+
+def docxtopdf(docx_path, pdf_path):
+    if os.path.exists(pdf_path):
+        os.remove(pdf_path)
+    print(docx_path)
+    subprocess.run(["sudo","unoconv","-f","pdf","--output",pdf_path, docx_path])
+
+   
+
 # def save_image(base64_data, path):
 #     image_data = base64.b64decode(base64_data)
 #     # 将字节数据写入内存中的文件对象
@@ -298,5 +374,5 @@ def is_scan_pdf(pages):
 #     # 从内存中的文件对象创建Image对象
 #     image = Image.open(image_file)
 #     # 保存图片到文件系统
-#     image.save(path)
+#     image.sav/e(path)
 
