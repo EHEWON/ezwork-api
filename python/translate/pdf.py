@@ -38,7 +38,7 @@ def start(trans):
     word_trans['file_path']=origin_docx_path
     word_trans['target_file']=target_docx_path
     word_trans['run_complete']=False;
-    word_trans['extension']='.docx';
+    word_trans['extension']='.docx'
     text_count=0
     if word.start(word_trans):
         docxtopdf(target_docx_path, trans['target_file'])
@@ -362,7 +362,7 @@ def pdftodocx(pdf_path, docx_path):
 def docxtopdf(docx_path, pdf_path):
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
-    print(docx_path)
+    # print(docx_path)
     subprocess.run(["sudo","unoconv","-f","pdf","--output",pdf_path, docx_path])
 
    

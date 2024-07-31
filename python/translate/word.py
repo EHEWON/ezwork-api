@@ -52,7 +52,7 @@ def start(trans):
         # 全部内容-保留原文-继承原版面
         read_rune_text(document, texts)
 
-    print(texts)
+    # print(texts)
     # exit()
     max_run=max_threads if len(texts)>max_threads else len(texts)
     event=threading.Event()
@@ -77,7 +77,7 @@ def start(trans):
             break
         else:
             time.sleep(1)
-    print(texts)
+    # print(texts)
     # print("翻译文本-结束")
 
     text_count=0
