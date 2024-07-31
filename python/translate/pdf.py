@@ -40,8 +40,8 @@ def start(trans):
     word_trans['extension']='.docx';
     print(trans)
     text_count=0
-    if word.start(trans):
-        docxtopdf(target_docx_path, os.path.dirname(target_docx_path))
+    if word.start(word_trans):
+        docxtopdf(target_docx_path, trans['target_file'])
         end_time = datetime.datetime.now()
         spend_time=common.display_spend(start_time, end_time)
         translate.complete(trans,text_count,spend_time)
