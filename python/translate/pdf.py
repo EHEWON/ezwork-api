@@ -16,6 +16,7 @@ from docx import Document
 import docx2pdf
 import pdf2docx
 import word
+import copy
 # from io import BytesIO
 # from PIL import Image
 # from weasyprint import HTML
@@ -33,12 +34,11 @@ def start(trans):
     target_docx_path=re.sub(r"\.pdf",".docx",trans['target_file'], flags=re.I)
     pdf_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
     pdftodocx(trans['file_path'], origin_docx_path)
-    word_trans=trans
+    word_trans=copy.copy(trans)
     word_trans['file_path']=origin_docx_path
     word_trans['target_file']=target_docx_path
     word_trans['run_complete']=False;
     word_trans['extension']='.docx';
-    print(trans)
     text_count=0
     if word.start(word_trans):
         docxtopdf(target_docx_path, trans['target_file'])
