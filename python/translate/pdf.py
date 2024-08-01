@@ -372,15 +372,14 @@ def pdftodocx(pdf_path, docx_path):
     cv.close()
 
 def docxtopdf(docx_path, pdf_path):
-    print(pdf_path)
-    if os.path.exists(pdf_path):
-        os.remove(pdf_path)
-    print("docxtopdf")
     print(docx_path)
     print(pdf_path)
     unoconv_path = shutil.which("unoconv")
     if unoconv_path is None:
         raise Exception("未安装unoconv")
+    target_path_dir=os.path.dirname(pdf_path)
+    if not os.path.exists(target_path_dir):
+        os.makedirs(target_path_dir)
     subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",pdf_path, docx_path])
 
    
