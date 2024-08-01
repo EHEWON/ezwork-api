@@ -37,6 +37,7 @@ def start(trans):
     word_trans['extension']='.docx'
     text_count=0
     if word.start(word_trans):
+        print("word done")
         docxtopdf(target_docx_path, trans['target_file'])
         end_time = datetime.datetime.now()
         spend_time=common.display_spend(start_time, end_time)
@@ -362,6 +363,7 @@ def pdftohtml(pdf_path, html_path,texts):
 
 
 def pdftodocx(pdf_path, docx_path):
+    print(docx_path)
     if os.path.exists(docx_path):
         os.remove(docx_path)
     print(pdf_path)
@@ -370,6 +372,7 @@ def pdftodocx(pdf_path, docx_path):
     cv.close()
 
 def docxtopdf(docx_path, pdf_path):
+    print(pdf_path)
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
     print("docxtopdf")
