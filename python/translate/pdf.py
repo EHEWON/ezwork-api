@@ -381,7 +381,7 @@ def docxtopdf(docx_path, pdf_path):
     unoconv_path = shutil.which("unoconv")
     if unoconv_path is None:
         raise Exception("未安装unoconv")
-    subprocess.run([unoconv_path,"-f","pdf","--output",pdf_path, docx_path])
+    subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",pdf_path, docx_path])
 
    
 
