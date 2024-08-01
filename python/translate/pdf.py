@@ -7,28 +7,24 @@ import os
 import sys
 import time
 import datetime
-from urllib.parse import quote
 import pdfkit
 import subprocess
-import platform
 import base64
-from docx import Document
 import docx2pdf
 import pdf2docx
 import word
 import copy
+import shutil
 # from io import BytesIO
 # from PIL import Image
 # from weasyprint import HTML
 
 def start(trans):
-    # config = pdfkit.configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")
-    # pdfkit.from_file("/Users/lemount/Downloads/red-html.html", trans['target_file'],options={"enable-local-file-access":True}, configuration=config)
+    texts=[]
+    src_pdf = fitz.open(trans['file_path'])
+    # print(is_scan_pdf(src_pdf))
     # exit()
-    # doc=Document("/Users/lemount/Downloads/小学科目二语文教学设计模板.docx")
-    # doc.save("/Users/lemount/Downloads/test222.pdf")
-    # docx2pdf.convert("/Users/lemount/Downloads/小学科目二语文教学设计模板.docx", "/Users/lemount/Downloads/test222.pdf")
-    # exit()
+    # if is_scan_pdf(src_pdf):
     start_time = datetime.datetime.now()
     origin_docx_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
     target_docx_path=re.sub(r"\.pdf",".docx",trans['target_file'], flags=re.I)
@@ -48,7 +44,6 @@ def start(trans):
         return True
     return False
 
-    exit()
     uuid=trans['uuid']
     html_path=trans['storage_path']+'/uploads/'+uuid
     trans['html_path']=html_path
@@ -67,9 +62,9 @@ def start(trans):
     run_index=0
     start_time = datetime.datetime.now()
     # print(f'Source pdf file: {} \n', trans['file_path'])
-    src_pdf = fitz.open(trans['file_path'])
-
-    texts=[]
+    
+    read_page_images(src_pdf, texts)
+    
     text_count=0
     # translate.get_models()
     # exit()
@@ -140,6 +135,13 @@ def read_page_html(pages, texts, trans):
             # images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
             # for i,image in enumerate(images):
             append_text(html,'text', texts)
+
+def read_page_images(pages, texts):
+    for index,page in enumerate(pages):
+        html=page.get_text("xhtml")
+        images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
+        for i,image in enumerate(images):
+            append_text(image, 'image', texts)
 
 def write_to_html_file(html_path,texts):
     with open(html_path, 'w+') as f:
@@ -322,6 +324,8 @@ def is_scan_pdf(pages):
         html=page.get_text("xhtml")
         images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
         text=page.get_text()
+        print(images)
+        print(text)
         if text=="" and len(images)>0:
             return True
         else:
@@ -332,7 +336,10 @@ def read_pdf_html(pages, texts, trans):
         target_html="{}-{}.html".format(trans['html_path'], page_index)
         if os.path.exists(target_html):
             os.remove(target_html)
-        subprocess.run(["pdftohtml","-c","-l", page_index, trans['file_path'], trans['html_path']])
+        dftohtml_path = shutil.which("pdftohtml")
+        if pdftohtml_path is None:
+            raise Exception("未安装pdftohtml")
+        subprocess.run([dftohtml_path,"-c","-l", page_index, trans['file_path'], trans['html_path']])
         if not os.path.exists(target_html):
             raise Exception("无法生成html")
         # append_text(html,'text', texts)
@@ -342,7 +349,10 @@ def pdftohtml(pdf_path, html_path,texts):
     target_html="{}-html.html".format(html_path)
     if os.path.exists(target_html):
         os.remove(target_html)
-    subprocess.run(["/opt/homebrew/bin/pdftohtml","-c","-s", pdf_path, html_path])
+    pdftohtml_path = shutil.which("pdftohtml")
+    if pdftohtml_path is None:
+        raise Exception("未安装pdftohtml")
+    subprocess.run([pdftohtml_path,"-c","-s", pdf_path, html_path])
     if not os.path.exists(target_html):
         raise Exception("无法生成html")
     with open(target_html, 'r') as f:
@@ -363,7 +373,10 @@ def docxtopdf(docx_path, pdf_path):
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
     # print(docx_path)
-    subprocess.run(["sudo","unoconv","-f","pdf","--output",pdf_path, docx_path])
+    unoconv_path = shutil.which("unoconv")
+    if unoconv_path is None:
+        raise Exception("未安装unoconv")
+    subprocess.run([unoconv_path,"-f","pdf","--output",pdf_path, docx_path])
 
    
 
