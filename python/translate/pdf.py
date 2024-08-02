@@ -382,7 +382,7 @@ def docxtopdf(docx_path, pdf_path):
     if not os.path.exists(target_path_dir):
         os.makedirs(target_path_dir)
     target_pdf = fitz.Document()
-    target_pdf.add_page()
+    target_pdf.new_page()
     target_pdf.save(pdf_path)
     target_pdf.close()
     subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",pdf_path, docx_path])
