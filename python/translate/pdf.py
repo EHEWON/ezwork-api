@@ -385,7 +385,7 @@ def docxtopdf(docx_path, pdf_path):
     # target_pdf.new_page()
     # target_pdf.save(pdf_path)
     # target_pdf.close()
-    subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",pdf_path, docx_path])
+    subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
 
    
 
