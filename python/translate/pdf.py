@@ -372,8 +372,8 @@ def pdftodocx(pdf_path, docx_path):
     cv.close()
 
 def docxtopdf(docx_path, pdf_path):
-    print(docx_path)
-    print(pdf_path)
+    if os.path.exists(pdf_path):
+        os.remove(pdf_path)
     sys.path.append("/usr/local/bin")
     unoconv_path = shutil.which("unoconv")
     if unoconv_path is None:
@@ -381,6 +381,8 @@ def docxtopdf(docx_path, pdf_path):
     target_path_dir=os.path.dirname(pdf_path)
     if not os.path.exists(target_path_dir):
         os.makedirs(target_path_dir)
+    target_pdf = fitz.open()
+    target_pdf.save(pdf_path)
     subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",pdf_path, docx_path])
 
    
