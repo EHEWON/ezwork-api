@@ -381,7 +381,7 @@ def docxtopdf(docx_path, pdf_path):
     target_path_dir=os.path.dirname(pdf_path)
     if not os.path.exists(target_path_dir):
         os.makedirs(target_path_dir)
-    target_pdf = fitz.open()
+    target_pdf = fitz.Document()
     target_pdf.add_page()
     target_pdf.save(pdf_path)
     target_pdf.close()
