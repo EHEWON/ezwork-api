@@ -47,10 +47,10 @@ def main():
     origin_path_dir=os.path.dirname(file_path)
     target_path_dir=os.path.dirname(target_file)
     if not os.path.exists(origin_path_dir):
-        os.makedirs(origin_path_dir)
+        os.makedirs(origin_path_dir, mode=0o777, exist_ok=True)
     
     if not os.path.exists(target_path_dir):
-        os.makedirs(target_path_dir)
+        os.makedirs(target_path_dir, mode=0o777, exist_ok=True)
 
     trans['file_path']=file_path
     trans['target_file']=target_file

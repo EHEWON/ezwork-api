@@ -380,12 +380,12 @@ def docxtopdf(docx_path, pdf_path):
         raise Exception("未安装unoconv")
     target_path_dir=os.path.dirname(pdf_path)
     if not os.path.exists(target_path_dir):
-        os.makedirs(target_path_dir)
+        os.makedirs(target_path_dir, mode=0o777, exist_ok=True)
     # target_pdf = fitz.Document()
     # target_pdf.new_page()
     # target_pdf.save(pdf_path)
     # target_pdf.close()
-    subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
+    subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",pdf_path, docx_path])
 
    
 
