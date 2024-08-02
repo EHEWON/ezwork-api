@@ -375,7 +375,7 @@ def docxtopdf(docx_path, pdf_path):
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
     sys.path.append("/usr/local/bin")
-    # unoconv_path = shutil.which("unoconv")
+    unoconv_path = shutil.which("unoconv")
     # if unoconv_path is None:
     #     raise Exception("未安装unoconv")
     target_path_dir=os.path.dirname(pdf_path)
@@ -387,9 +387,9 @@ def docxtopdf(docx_path, pdf_path):
     # target_pdf.close()
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
-    print("/usr/local/bin/unoconv -f pdf -o {} {}".format(pdf_path, docx_path))
-    print("/usr/local/bin/unoconv -f pdf -o {} {}".format(target_path_dir+"/", docx_path))
-    subprocess.run(["/usr/local/bin/unoconv","-f","pdf","-o",target_path_dir+"/", docx_path])
+    print("{} -f pdf -o {} {}".format(unoconv_path,pdf_path, docx_path))
+    print("{} -f pdf -o {} {}".format(unoconv_path,target_path_dir+"/", docx_path))
+    subprocess.run([unoconv_path,"-f","pdf","-o",target_path_dir+"/", docx_path])
 
    
 
