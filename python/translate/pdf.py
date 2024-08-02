@@ -374,6 +374,7 @@ def pdftodocx(pdf_path, docx_path):
 def docxtopdf(docx_path, pdf_path):
     print(docx_path)
     print(pdf_path)
+    sys.path.append("/usr/local/bin")
     unoconv_path = shutil.which("unoconv")
     if unoconv_path is None:
         raise Exception("未安装unoconv")
