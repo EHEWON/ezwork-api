@@ -391,6 +391,7 @@ def docxtopdf(docx_path, pdf_path):
     print("sudo {} -f pdf -o {} {}".format(unoconv_path,pdf_path, docx_path))
     # subprocess.run([unoconv_path,"-f","pdf","-o",target_path_dir+"/", docx_path])
     subprocess.run(["sudo",unoconv_path,"-f","pdf","-i","utf8","-o",pdf_path, docx_path], shell=True)
+    subprocess.run(["sudo",unoconv_path,"-f","pdf","-i","utf8", docx_path], shell=True)
 
    
 
