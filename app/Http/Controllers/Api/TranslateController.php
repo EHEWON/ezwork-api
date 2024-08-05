@@ -158,7 +158,7 @@ class TranslateController extends BaseAuthController {
             'threads'=>$threads,
         ]);
         $m_translate->startTranslate($id);
-        echo "python3 $translate_main $uuid $storage_path".PHP_EOL;
+        echo "sudo python3 $translate_main $uuid $storage_path".PHP_EOL;
         $cmd = shell_exec("sudo python3 $translate_main $uuid $storage_path");
         echo $cmd;
         // if($this->checkEndTranslate($uuid)){
