@@ -401,7 +401,7 @@ def docxtopdf(docx_path, pdf_path):
         subprocess.run(["sudo",unoconv_path,"-f","pdf","-i","utf8", docx_path], shell=True)
     except Exception as e:
         print(e)
-
+    print("done")
    
 
 # def save_image(base64_data, path):
