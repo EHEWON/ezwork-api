@@ -2,8 +2,8 @@ import subprocess
 import shutil
 
 unoconv_path = shutil.which("unoconv")
-docx_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/9WHoPMLc5Acl503WVzfF3eV3V4evq0xN35SnAJv6/avm-中文.docx"
-pdf_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/9WHoPMLc5Acl503WVzfF3eV3V4evq0xN35SnAJv6/avm-中文.pdf"
+docx_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/ehBTbaeCbdMPJdV7B9lV1zewG3KM5H7agVk6KIIQ/avm-1-俄语.docx"
+pdf_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/ehBTbaeCbdMPJdV7B9lV1zewG3KM5H7agVk6KIIQ/avm-1-俄语.pdf"
 
 print(unoconv_path)
 print("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path))
