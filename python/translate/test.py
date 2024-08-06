@@ -7,4 +7,6 @@ pdf_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/ehBTbaeCbdM
 
 print(unoconv_path)
 print("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path))
-subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
+process=subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), stdout=subprocess.PIPE, shell=True, text=True)
+print(process.stdout)
+print("done")
