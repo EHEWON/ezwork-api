@@ -62,6 +62,7 @@ def main():
     item_count=0
     spend_time=''
     try:
+        status=True
         # 设置OpenAI API
         translate.init_openai(api_url, api_key)
         if extension=='.docx':
