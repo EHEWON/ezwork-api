@@ -2,7 +2,8 @@ import subprocess
 import shutil
 import getpass
 
-unoconv_path = shutil.which("unoconv")
+# unoconv_path = shutil.which("unoconv")
+unoconv_path = "sudo unoconv"
 docx_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/ehBTbaeCbdMPJdV7B9lV1zewG3KM5H7agVk6KIIQ/avm-1-俄语.docx"
 pdf_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/ehBTbaeCbdMPJdV7B9lV1zewG3KM5H7agVk6KIIQ/avm-1-俄语.pdf"
 
