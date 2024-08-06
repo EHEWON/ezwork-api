@@ -6,13 +6,21 @@ docx_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/ehBTbaeCbd
 pdf_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/ehBTbaeCbdMPJdV7B9lV1zewG3KM5H7agVk6KIIQ/avm-1-俄语.pdf"
 
 print("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path))
-process=subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), stdout=subprocess.PIPE, text=True)
-print(process.stdout)
-print("done")
+try:
+    process=subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), stdout=subprocess.PIPE, text=True)
+    print(process.stdout)
+    print("done")
+except Exception as e:
+    print(e)
 
+try:
+    subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path))
+    print("done2")
+except Exception as e:
+    print(e)
 
-subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path))
-print("done2")
-
-subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path),shell=True)
-print("done3")
+try:
+    subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path),shell=True)
+    print("done3")
+except Exception as e:
+    print(e)
