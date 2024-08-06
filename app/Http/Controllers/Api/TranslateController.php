@@ -111,8 +111,8 @@ class TranslateController extends BaseAuthController {
         $extension = pathinfo($upload_filename, PATHINFO_EXTENSION);
         $filename = pathinfo($upload_filename,  PATHINFO_FILENAME);
         $storage_path=storage_path('app/public');
-        // $target_filepath=sprintf('/translate/%s/%s', basename(pathinfo($origin_filepath,  PATHINFO_FILENAME), $extension),$filename.'-'.$params['lang'].'.'.$extension);
-        $target_filepath=sprintf('/translate/%s/%s', basename(pathinfo($origin_filepath,  PATHINFO_FILENAME), $extension),$filename.'-ru.'.$extension);
+        $target_filepath=sprintf('/translate/%s/%s', basename(pathinfo($origin_filepath,  PATHINFO_FILENAME), $extension),$filename.'-'.$params['lang'].'.'.$extension);
+        // $target_filepath=sprintf('/translate/%s/%s', basename(pathinfo($origin_filepath,  PATHINFO_FILENAME), $extension),$filename.'-ru.'.$extension);
         $origin_storage_path=$storage_path.$origin_filepath;
         $target_storage_path=$storage_path.$target_filepath;
         $target_url='/storage/'.$target_filepath;
