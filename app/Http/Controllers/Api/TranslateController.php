@@ -258,14 +258,13 @@ class TranslateController extends BaseAuthController {
     }
 
     public function test(Request $request){
-        $uid = posix_geteuid();
-        // 获取用户信息
-        $userInfo = posix_getpwuid($uid);
-        print_r($userInfo);
         $translate_main=base_path('python/translate/main.py');
+        $test_main=base_path('python/translate/test.py');
         $uuid="7414d92abd42c65cc7a69092cb205e86091a6dbd";
         $storage_path=storage_path('app/public');
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
         echo $cmd;
+        $result = shell_exec("python3 $test_main");
+        echo $result;
     }
 }

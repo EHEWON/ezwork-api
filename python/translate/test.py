@@ -8,6 +8,6 @@ pdf_path="/Volumes/data/erui/ezwork-api/storage/app/public/translate/9WHoPMLc5Ac
 print(unoconv_path)
 
 try:
-    subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, "/tmp/2.pdf", docx_path), shell=True)
+    subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
 except Exception as e:
     print(e)
