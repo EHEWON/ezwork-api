@@ -3,7 +3,7 @@ import shutil
 import getpass
 
 # unoconv_path = shutil.which("unoconv")
-unoconv_path = "sudo unoconv -vvv "
+unoconv_path = "sudo /usr/local/bin/unoconv -vvv "
 docx_path="/data/www/ezwork_api/storage/app/public/translate/ehBTbaeCbdMPJdV7B9lV1zewG3KM5H7agVk6KIIQ/avm-1-俄语.docx"
 pdf_path="/data/www/ezwork_api/storage/app/public/translate/ehBTbaeCbdMPJdV7B9lV1zewG3KM5H7agVk6KIIQ/avm-1-俄语.pdf"
 
