@@ -256,4 +256,12 @@ class TranslateController extends BaseAuthController {
         }
         return false;
     }
+
+    public function test(Request $request){
+        $translate_main=base_path('python/translate/main.py');
+        $uuid="7414d92abd42c65cc7a69092cb205e86091a6dbd";
+        $storage_path=storage_path('app/public');
+        $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
+        echo $cmd;
+    }
 }
