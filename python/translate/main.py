@@ -35,8 +35,8 @@ def main():
 
     translate_id=trans['id']
     origin_filename=trans['origin_filename']
-    origin_filepath=common.format_file_path(trans['origin_filepath'])
-    target_filepath=common.format_file_path(trans['target_filepath'])
+    origin_filepath=trans['origin_filepath']
+    target_filepath=trans['target_filepath']
     api_key=trans['api_key']
     api_url=trans['api_url']
 
