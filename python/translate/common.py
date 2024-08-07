@@ -4,6 +4,7 @@ import datetime
 import os
 import platform
 import subprocess
+from pathlib import Path
 
 def is_all_punc(strings):
     if isinstance(strings, datetime.time):
@@ -61,3 +62,9 @@ def find_command_location(command):
     except subprocess.CalledProcessError as e:
         print(e)
         raise Exception("未安装"+command)
+
+def format_file_path(filepath):
+    filename=os.path.basename(filepath)
+    filename=Path(filename).as_posix()
+    parentpath=os.path.dirname(filepath)
+    return "{}{}".format(parentpath, filename)
