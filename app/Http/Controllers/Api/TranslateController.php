@@ -106,7 +106,7 @@ class TranslateController extends BaseAuthController {
 
         $translate_main=base_path('python/translate/main.py');
         $origin_filepath=$params['file_path'];
-        $upload_filename=urlencode($params['file_name']);
+        $upload_filename=mb_convert_encoding($params['file_name'],'UTF-8','auto');   
         $uuid=$params['uuid'];
         $extension = pathinfo($upload_filename, PATHINFO_EXTENSION);
         $filename = pathinfo($upload_filename,  PATHINFO_FILENAME);
