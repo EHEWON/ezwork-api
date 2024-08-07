@@ -67,4 +67,4 @@ def format_file_path(filepath):
     filename=os.path.basename(filepath)
     filename=Path(filename).as_posix()
     parentpath=os.path.dirname(filepath)
-    return "{}{}".format(parentpath, filename)
+    return "{}/{}".format(parentpath, filename)
