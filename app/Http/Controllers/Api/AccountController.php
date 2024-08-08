@@ -126,6 +126,9 @@ class AccountController extends BaseAuthController {
     public function info(){
         $m_customer=new Customer();
         $customer=$m_customer->getCustomerInfo($this->customer_id);
+        if(empty($customer)){
+            ok([]);
+        }
         ok([
             'email'=>$customer['email'],
             'level'=>$customer['level'],
