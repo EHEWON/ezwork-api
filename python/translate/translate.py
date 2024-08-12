@@ -9,6 +9,9 @@ import pymysql
 import db
 from pathlib import Path
 
+import sys
+import traceback
+
 def get(trans, event,texts, index):
     if event.is_set():
         exit(0)
@@ -31,7 +34,7 @@ def get(trans, event,texts, index):
             else:
                 content=get_content_by_image(text['text'], target_lang)
         else:
-            content=get(text['text'], target_lang, model, prompt)
+            content=req(text['text'], target_lang, model, prompt)
         text['count']=count_text(text['text'])
         if check_translated(content):
             text['text']=content
@@ -52,6 +55,9 @@ def get(trans, event,texts, index):
     except openai.APIStatusError as e:
         use_backup_model(trans, event,texts, index, e.response)
     except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
+        print(f"Error occurred on line: {line_number}")
         print(e)
         # traceback.print_exc()
         text['complete']=True

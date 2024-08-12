@@ -11,6 +11,7 @@ import powerpoint
 import pdf
 import pymysql
 import db
+import common
 
 # 当前正在执行的线程
 run_threads=0
@@ -47,10 +48,10 @@ def main():
     origin_path_dir=os.path.dirname(file_path)
     target_path_dir=os.path.dirname(target_file)
     if not os.path.exists(origin_path_dir):
-        os.makedirs(origin_path_dir)
+        os.makedirs(origin_path_dir, mode=0o777, exist_ok=True)
     
     if not os.path.exists(target_path_dir):
-        os.makedirs(target_path_dir)
+        os.makedirs(target_path_dir, mode=0o777, exist_ok=True)
 
     trans['file_path']=file_path
     trans['target_file']=target_file
@@ -58,9 +59,11 @@ def main():
     trans['storage_path']=storage_path
     extension = origin_filename[origin_filename.rfind('.'):]
     trans['extension']=extension
+    trans['run_complete']=True
     item_count=0
     spend_time=''
     try:
+        status=True
         # 设置OpenAI API
         translate.init_openai(api_url, api_key)
         if extension=='.docx':

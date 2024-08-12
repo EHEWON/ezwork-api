@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
  */
 class TranslateController extends BaseAuthController {
 
-    protected $skip_methods=['setting'];
+    protected $skip_methods=['setting','test'];
 
     public function getMessages(){
         return [
@@ -106,12 +106,13 @@ class TranslateController extends BaseAuthController {
 
         $translate_main=base_path('python/translate/main.py');
         $origin_filepath=$params['file_path'];
-        $upload_filename=$params['file_name'];
+        $upload_filename=mb_convert_encoding($params['file_name'],'UTF-8','auto');   
         $uuid=$params['uuid'];
         $extension = pathinfo($upload_filename, PATHINFO_EXTENSION);
         $filename = pathinfo($upload_filename,  PATHINFO_FILENAME);
         $storage_path=storage_path('app/public');
         $target_filepath=sprintf('/translate/%s/%s', basename(pathinfo($origin_filepath,  PATHINFO_FILENAME), $extension),$filename.'-'.$params['lang'].'.'.$extension);
+        // $target_filepath=sprintf('/translate/%s/%s', basename(pathinfo($origin_filepath,  PATHINFO_FILENAME), $extension),$filename.'-ru.'.$extension);
         $origin_storage_path=$storage_path.$origin_filepath;
         $target_storage_path=$storage_path.$target_filepath;
         $target_url='/storage/'.$target_filepath;
@@ -158,7 +159,7 @@ class TranslateController extends BaseAuthController {
             'threads'=>$threads,
         ]);
         $m_translate->startTranslate($id);
-        echo "python3 $translate_main $uuid $storage_path".PHP_EOL;
+        echo "sudo python3 $translate_main $uuid $storage_path".PHP_EOL;
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
         echo $cmd;
         // if($this->checkEndTranslate($uuid)){
@@ -254,5 +255,16 @@ class TranslateController extends BaseAuthController {
             }
         }
         return false;
+    }
+
+    public function test(Request $request){
+        $translate_main=base_path('python/translate/main.py');
+        $test_main=base_path('python/translate/test.py');
+        $uuid="7414d92abd42c65cc7a69092cb205e86091a6dbd";
+        $storage_path=storage_path('app/public');
+        $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
+        echo $cmd;
+        $result = shell_exec("python3 $test_main");
+        echo $result;
     }
 }

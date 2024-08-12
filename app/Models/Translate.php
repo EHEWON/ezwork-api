@@ -35,6 +35,7 @@ class Translate extends Model{
         foreach($results as &$result){
             $result->status_name=$this->getStatusName($result->status);
             $result->spend_time=spend_time($result->start_at, $result->end_at);
+            $result->origin_filename=urldecode($result->origin_filename);
             if(strtolower($result->status)=='done'){
                 $result->target_filepath='/storage/'.trim($result->target_filepath,'/');
             }else{

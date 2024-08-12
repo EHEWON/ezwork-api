@@ -5,3 +5,5 @@ python-pptx
 pymysql
 PyMuPDF==1.24.7
 tiktoken
+pdf2docx
+docx2pdf

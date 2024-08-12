@@ -111,7 +111,8 @@ def start(trans):
     document.save(trans['target_file'])
     end_time = datetime.datetime.now()
     spend_time=common.display_spend(start_time, end_time)
-    translate.complete(trans,text_count,spend_time)
+    if trans['run_complete']:
+        translate.complete(trans,text_count,spend_time)
     return True
 
 

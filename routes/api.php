@@ -16,6 +16,7 @@ Route::post('/upload', [UploadController::class, 'index']);
 Route::post('/delFile', [UploadController::class, 'del']);
 Route::get('/translates', [TranslateController::class, 'index']);
 Route::get('/translate/setting', [TranslateController::class, 'setting']);
+Route::get('/translate/test', [TranslateController::class, 'test']);
 Route::post('/translate', [TranslateController::class, 'start']);
 Route::delete('/translate/{id}', [TranslateController::class, 'del'])->where('id','[0-9]+');
 Route::delete('/translate/all', [TranslateController::class, 'delAll']);

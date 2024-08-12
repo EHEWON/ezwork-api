@@ -7,18 +7,48 @@ import os
 import sys
 import time
 import datetime
-from urllib.parse import quote
 import pdfkit
 import subprocess
-import platform
 import base64
+import docx2pdf
+import pdf2docx
+import word
+import copy
+import shutil
 # from io import BytesIO
 # from PIL import Image
 # from weasyprint import HTML
 
 def start(trans):
+    texts=[]
+    src_pdf = fitz.open(trans['file_path'])
+    # print(is_scan_pdf(src_pdf))
+    # exit()
+    # if is_scan_pdf(src_pdf):
+    start_time = datetime.datetime.now()
+    origin_docx_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
+    target_docx_path=re.sub(r"\.pdf",".docx",trans['target_file'], flags=re.I)
+    pdf_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
+    pdftodocx(trans['file_path'], origin_docx_path)
+    word_trans=copy.copy(trans)
+    word_trans['file_path']=origin_docx_path
+    word_trans['target_file']=target_docx_path
+    word_trans['run_complete']=False;
+    word_trans['extension']='.docx'
+    text_count=0
+    if word.start(word_trans):
+        print("word done")
+        docxtopdf(target_docx_path, trans['target_file'])
+        end_time = datetime.datetime.now()
+        spend_time=common.display_spend(start_time, end_time)
+        translate.complete(trans,text_count,spend_time)
+        return True
+    return False
+
     uuid=trans['uuid']
-    html_path=trans['storage_path']+'/uploads/'+uuid+'.html'
+    html_path=trans['storage_path']+'/uploads/'+uuid
+    trans['html_path']=html_path
+    # read_pdf_html(trans['file_path'], html_path)
     # print(trans['storage_path']+'/uploads/pdf.html')
     # exit()
     # 允许的最大线程
@@ -33,16 +63,18 @@ def start(trans):
     run_index=0
     start_time = datetime.datetime.now()
     # print(f'Source pdf file: {} \n', trans['file_path'])
-    src_pdf = fitz.open(trans['file_path'])
-
-    texts=[]
+    
+    read_page_images(src_pdf, texts)
+    
     text_count=0
     # translate.get_models()
     # exit()
-    read_page_html(src_pdf, texts, trans)
+    # read_page_html(src_pdf, texts, trans)
+    # read_pdf_html(src_pdf, texts, trans)
+    pdftohtml(trans['file_path'], html_path, texts)
     src_pdf.close()
 
-    # print(texts)
+    print(texts)
     # exit()
 
     max_run=max_threads if len(texts)>max_threads else len(texts)
@@ -104,6 +136,13 @@ def read_page_html(pages, texts, trans):
             # images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
             # for i,image in enumerate(images):
             append_text(html,'text', texts)
+
+def read_page_images(pages, texts):
+    for index,page in enumerate(pages):
+        html=page.get_text("xhtml")
+        images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
+        for i,image in enumerate(images):
+            append_text(image, 'image', texts)
 
 def write_to_html_file(html_path,texts):
     with open(html_path, 'w+') as f:
@@ -286,10 +325,72 @@ def is_scan_pdf(pages):
         html=page.get_text("xhtml")
         images=re.findall(r"(data:image/\w+;base64,[^\"]+)", html)
         text=page.get_text()
+        print(images)
+        print(text)
         if text=="" and len(images)>0:
             return True
         else:
             return False
+
+def read_pdf_html(pages, texts, trans):
+    for index,page in enumerate(pages):
+        target_html="{}-{}.html".format(trans['html_path'], page_index)
+        if os.path.exists(target_html):
+            os.remove(target_html)
+        dftohtml_path = shutil.which("pdftohtml")
+        if pdftohtml_path is None:
+            raise Exception("未安装pdftohtml")
+        subprocess.run([dftohtml_path,"-c","-l", page_index, trans['file_path'], trans['html_path']])
+        if not os.path.exists(target_html):
+            raise Exception("无法生成html")
+        # append_text(html,'text', texts)
+
+
+def pdftohtml(pdf_path, html_path,texts):
+    target_html="{}-html.html".format(html_path)
+    if os.path.exists(target_html):
+        os.remove(target_html)
+    pdftohtml_path = shutil.which("pdftohtml")
+    if pdftohtml_path is None:
+        raise Exception("未安装pdftohtml")
+    subprocess.run([pdftohtml_path,"-c","-s", pdf_path, html_path])
+    if not os.path.exists(target_html):
+        raise Exception("无法生成html")
+    with open(target_html, 'r') as f:
+        content=f.read()
+        print(content)
+        append_text(content, 'text', texts)
+
+
+def pdftodocx(pdf_path, docx_path):
+    print(docx_path)
+    if os.path.exists(docx_path):
+        os.remove(docx_path)
+    print(pdf_path)
+    cv = pdf2docx.Converter(pdf_path)
+    cv.convert(docx_path, multi_processing=True)
+    cv.close()
+
+def docxtopdf(docx_path, pdf_path):
+    if os.path.exists(pdf_path):
+        os.remove(pdf_path)
+    sys.path.append("/usr/local/bin")
+    unoconv_path = shutil.which("unoconv")
+    if unoconv_path is None:
+        raise Exception("未安装unoconv")
+    target_path_dir=os.path.dirname(pdf_path)
+    if not os.path.exists(target_path_dir):
+        os.makedirs(target_path_dir, mode=0o777, exist_ok=True)
+    # target_pdf = fitz.Document()
+    # target_pdf.new_page()
+    # target_pdf.save(pdf_path)
+    # target_pdf.close()
+    # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
+    # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
+    print("sudo {} -f pdf -o \"{}\" \"{}\"".format(unoconv_path,pdf_path, docx_path))
+    subprocess.run("sudo {} -f pdf -o \"{}\" \"{}\"".format(unoconv_path, pdf_path, docx_path), shell=True)
+    print("done")
+   
 
 # def save_image(base64_data, path):
 #     image_data = base64.b64decode(base64_data)
@@ -298,5 +399,5 @@ def is_scan_pdf(pages):
 #     # 从内存中的文件对象创建Image对象
 #     image = Image.open(image_file)
 #     # 保存图片到文件系统
-#     image.save(path)
+#     image.sav/e(path)
 
