@@ -1,5 +1,5 @@
 import openai
-import tiktoken
+# import tiktoken
 import datetime
 import common
 import traceback
@@ -204,9 +204,9 @@ def check_translated(content):
         return True
 
 
-def get_model_tokens(model,content):
-    encoding=tiktoken.encoding_for_model(model)
-    return en(encoding.encode(content))
+# def get_model_tokens(model,content):
+#     encoding=tiktoken.encoding_for_model(model)
+#     return en(encoding.encode(content))
 
 def use_backup_model(trans, event,texts, index, message):
     if trans['backup_model']!=None and trans['backup_model']!="":
