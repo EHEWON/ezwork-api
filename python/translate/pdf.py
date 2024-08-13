@@ -15,6 +15,7 @@ import pdf2docx
 import word
 import copy
 import shutil
+from urllib.parse import quote
 # from io import BytesIO
 # from PIL import Image
 # from weasyprint import HTML
@@ -387,8 +388,8 @@ def docxtopdf(docx_path, pdf_path):
     # target_pdf.close()
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
-    print("sudo {} -f pdf -o \"{}\" \"{}\"".format(unoconv_path,pdf_path, docx_path))
-    subprocess.run("sudo {} -f pdf -o \"{}\" \"{}\"".format(unoconv_path, pdf_path, docx_path), shell=True)
+    print("sudo {} -f pdf -o {} {}".format(unoconv_path,quote(pdf_path), quote(docx_path)))
+    subprocess.run("sudo {} -f pdf -o {} {}".format(unoconv_path, quote(pdf_path), quote(docx_path)), shell=True)
     print("done")
    
 
