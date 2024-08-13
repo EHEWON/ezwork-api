@@ -264,7 +264,7 @@ class TranslateController extends BaseAuthController {
         $storage_path=storage_path('app/public');
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path");
         echo $cmd;
-        $result = shell_exec("python3 $test_main");
-        echo $result;
+        // $result = shell_exec("python3 $test_main");
+        // echo $result;
     }
 }
