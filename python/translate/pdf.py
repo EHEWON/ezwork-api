@@ -28,7 +28,8 @@ def start(trans):
     # if is_scan_pdf(src_pdf):
     start_time = datetime.datetime.now()
     origin_docx_path=os.path.dirname(trans['file_path'])+"/"+trans['uuid']+".docx"
-    target_docx_path=os.path.dirname(trans['file_path'])+"/"+trans['uuid']+".pdf"
+    target_docx_path=os.path.dirname(trans['file_path'])+"/"+trans['uuid']+"-translated.docx"
+    target_pdf_path=os.path.dirname(trans['file_path'])+"/"+trans['uuid']+".pdf"
     # target_docx_path=re.sub(r"\.pdf",".docx",trans['target_file'], flags=re.I)
     # pdf_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
     pdftodocx(trans['file_path'], origin_docx_path)
@@ -41,8 +42,8 @@ def start(trans):
     
     if word.start(word_trans):
         print("word done")
-        docxtopdf(target_docx_path, trans['target_file'])
-        shutil.move(trans['target_file'], os.path.join(trans['storage_path'], trans['target_filepath']))
+        docxtopdf(target_docx_path, target_pdf_path)
+        shutil.move(target_pdf_path, os.path.join(trans['storage_path'], trans['target_filepath']))
         end_time = datetime.datetime.now()
         spend_time=common.display_spend(start_time, end_time)
         translate.complete(trans,text_count,spend_time)
