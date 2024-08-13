@@ -27,9 +27,10 @@ def start(trans):
     # exit()
     # if is_scan_pdf(src_pdf):
     start_time = datetime.datetime.now()
-    origin_docx_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
-    target_docx_path=re.sub(r"\.pdf",".docx",trans['target_file'], flags=re.I)
-    pdf_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
+    origin_docx_path=os.path.dirname(trans['file_path'])+"/"+trans['uuid']+".docx"
+    target_docx_path=os.path.dirname(trans['file_path'])+"/"+trans['uuid']+".pdf"
+    # target_docx_path=re.sub(r"\.pdf",".docx",trans['target_file'], flags=re.I)
+    # pdf_path=re.sub(r"\.pdf",".docx",trans['file_path'], flags=re.I)
     pdftodocx(trans['file_path'], origin_docx_path)
     word_trans=copy.copy(trans)
     word_trans['file_path']=origin_docx_path
@@ -37,9 +38,11 @@ def start(trans):
     word_trans['run_complete']=False;
     word_trans['extension']='.docx'
     text_count=0
+    
     if word.start(word_trans):
         print("word done")
         docxtopdf(target_docx_path, trans['target_file'])
+        shutil.move(trans['target_file'], os.path.join(trans['storage_path'], trans['target_filepath']))
         end_time = datetime.datetime.now()
         spend_time=common.display_spend(start_time, end_time)
         translate.complete(trans,text_count,spend_time)
