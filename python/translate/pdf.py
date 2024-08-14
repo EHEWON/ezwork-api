@@ -19,7 +19,7 @@ import copy
 import shutil
 from urllib.parse import quote
 from io import BytesIO
-from PIL import Image
+from PIL import Image,ImageDraw
 # from weasyprint import HTML
 
 def start(trans):
@@ -423,18 +423,17 @@ def pdf2docxNext(pdf_path, docx_path):
                                     (font_color >> 8) & 0xFF,   # G
                                     font_color & 0xFF            # B
                                 )
-            
-            # 提取图像
-            image_list = page.get_images(full=True)
-            for img_index, img in enumerate(image_list):
-                xref = img[0]
-                base_image = pdf_document.extract_image(xref)
-                image_bytes = base_image["image"]
-                image_ext = base_image["ext"]
-                
-                # 将图像添加到 DOCX
-                image_stream = BytesIO(image_bytes)
-                doc.add_picture(image_stream, width=None)  # 可以指定宽度
+                elif block["type"] == 1:
+                    # 提取图像
+                    img_index = block["image"]
+                    base_image = pdf_document.extract_image(img_index)
+                    image_bytes = base_image["image"]
+                    image_ext = base_image["ext"]
+                    
+                    # 将图像添加到 DOCX
+                    image_stream = BytesIO(image_bytes)
+                    doc.add_picture(image_stream, width=None)  # 可以指定宽度
+
 
             # 添加分页符
             doc.add_page_break()
