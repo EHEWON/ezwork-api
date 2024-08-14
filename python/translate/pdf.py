@@ -397,32 +397,32 @@ def pdf2docxNext(pdf_path, docx_path):
             page = pdf_document[page_num]
             fonts=page.get_fonts()
             # 提取文本
-            text_blocks = page.get_text("blocks")
-            for block in text_blocks:
-                # block[4] 是文本内容
-                text = block[4]
-                # block[0] 是文本块的矩形区域
-                rect = block[:4]
-                
-                font_index = block[5]
-                font_size = 12  # 默认字体大小
-                font_color = (0, 0, 0)  # 默认黑色
-                # 获取字体信息
-                # if font_index != 0:
-                #     font_info = fonts[font_index]
-                #     if font_info:
-                        # font_size = font_info[0]  # 字体大小
-                        # font_color = font_info[2]  # 字体颜色
-                
-                # 创建段落
-                paragraph = doc.add_paragraph()
-                run = paragraph.add_run(text)
-                
-                # 设置字体大小
-                run.font.size = Pt(font_size)
-                
-                # 设置字体颜色
-                run.font.color.rgb = RGBColor(*font_color)
+            # 提取文本和样式信息
+            text_dict = page.get_text("dict")
+            
+            # 遍历文本块
+            for block in text_dict["blocks"]:
+                if block["type"] == 0:  # 只处理文本块
+                    for line in block["lines"]:
+                        for span in line["spans"]:
+                            text = span["text"]
+                            font_size = span["size"]  # 字体大小
+                            font_color = span["color"]  # 字体颜色
+                            
+                            # 创建段落
+                            paragraph = doc.add_paragraph()
+                            run = paragraph.add_run(text)
+                            
+                            # 设置字体大小
+                            run.font.size = Pt(font_size)
+                            
+                            # 设置字体颜色
+                            if font_color:
+                                run.font.color.rgb = RGBColor(
+                                    (font_color >> 16) & 0xFF,  # R
+                                    (font_color >> 8) & 0xFF,   # G
+                                    font_color & 0xFF            # B
+                                )
             
             # 提取图像
             image_list = page.get_images(full=True)
