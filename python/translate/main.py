@@ -12,6 +12,7 @@ import pdf
 import pymysql
 import db
 import common
+import traceback
 
 # 当前正在执行的线程
 run_threads=0
@@ -62,27 +63,30 @@ def main():
     trans['run_complete']=True
     item_count=0
     spend_time=''
-    try:
-        status=True
-        # 设置OpenAI API
-        translate.init_openai(api_url, api_key)
-        if extension=='.docx':
-            print(file_path)
-            status=word.start(trans)
-        elif extension=='.xls' or extension == '.xlsx':
-            status=excel.start(trans)
-        elif extension=='.ppt' or extension == '.pptx':
-            status=powerpoint.start(trans)
-        elif extension == '.pdf':
-            status=pdf.start(trans)
-        if status:
-            print("success")
-            # print(item_count + ";" + spend_time)
-        else:
-            print("翻译出错了")
-    except Exception as e:
-        translate.error(translate_id,process_file,str(e))
-        print(e)
+    # try:
+    status=True
+    # 设置OpenAI API
+    translate.init_openai(api_url, api_key)
+    if extension=='.docx':
+        print(file_path)
+        status=word.start(trans)
+    elif extension=='.xls' or extension == '.xlsx':
+        status=excel.start(trans)
+    elif extension=='.ppt' or extension == '.pptx':
+        status=powerpoint.start(trans)
+    elif extension == '.pdf':
+        status=pdf.start(trans)
+    if status:
+        print("success")
+        # print(item_count + ";" + spend_time)
+    else:
+        print("翻译出错了")
+    # except Exception as e:
+    #     translate.error(translate_id,process_file,str(e))
+    #     exc_type, exc_value, exc_traceback = sys.exc_info()
+    #     line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
+    #     print(f"Error occurred on line: {line_number}")
+    #     print(e)
 
 if __name__ == '__main__':
     main()

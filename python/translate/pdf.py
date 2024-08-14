@@ -7,7 +7,9 @@ import os
 import sys
 import time
 import datetime
-import pdfkit
+from docx import Document
+from docx.shared import Pt, RGBColor
+# import pdfkit
 import subprocess
 import base64
 import docx2pdf
@@ -16,8 +18,8 @@ import word
 import copy
 import shutil
 from urllib.parse import quote
-# from io import BytesIO
-# from PIL import Image
+from io import BytesIO
+from PIL import Image
 # from weasyprint import HTML
 
 def start(trans):
@@ -45,7 +47,7 @@ def start(trans):
     text_count=0
     
     if word.start(word_trans):
-        print("word done")
+        # print("word done")
         docxtopdf(target_docx_path, target_pdf_path)
         shutil.move(target_pdf_path, trans['target_file'])
         end_time = datetime.datetime.now()
@@ -115,9 +117,9 @@ def start(trans):
     # print(texts)
 
     write_to_html_file(html_path, texts)
-    config = pdfkit.configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")
-    with open(html_path) as f:
-        pdfkit.from_file(f, trans['target_file'],options={"enable-local-file-access":True}, configuration=config)
+    # config = pdfkit.configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")
+    # with open(html_path) as f:
+    #     pdfkit.from_file(f, trans['target_file'],options={"enable-local-file-access":True}, configuration=config)
 
     # print(trans['target_file'])
 
@@ -376,9 +378,72 @@ def pdftodocx(pdf_path, docx_path):
     if os.path.exists(docx_path):
         os.remove(docx_path)
     print(pdf_path)
-    cv = pdf2docx.Converter(pdf_path)
-    cv.convert(docx_path, multi_processing=True)
-    cv.close()
+    try:
+        cv = pdf2docx.Converter(pdf_path)
+        cv.convert(docx_path, multi_processing=True)
+        cv.close()
+    except Exception as e:
+        print("error")
+        pdf2docxNext(pdf_path, docx_path)
+
+def pdf2docxNext(pdf_path, docx_path):
+    try:
+        # 创建一个新的 DOCX 文档
+        doc = Document()
+        # 打开 PDF 文件
+        pdf_document = fitz.open(pdf_path)
+        # 遍历 PDF 的每一页
+        for page_num in range(len(pdf_document)):
+            page = pdf_document[page_num]
+            fonts=page.get_fonts()
+            # 提取文本
+            text_blocks = page.get_text("blocks")
+            for block in text_blocks:
+                # block[4] 是文本内容
+                text = block[4]
+                # block[0] 是文本块的矩形区域
+                rect = block[:4]
+                
+                font_index = block[5]
+                font_size = 12  # 默认字体大小
+                font_color = (0, 0, 0)  # 默认黑色
+                # 获取字体信息
+                # if font_index != 0:
+                #     font_info = fonts[font_index]
+                #     if font_info:
+                        # font_size = font_info[0]  # 字体大小
+                        # font_color = font_info[2]  # 字体颜色
+                
+                # 创建段落
+                paragraph = doc.add_paragraph()
+                run = paragraph.add_run(text)
+                
+                # 设置字体大小
+                run.font.size = Pt(font_size)
+                
+                # 设置字体颜色
+                run.font.color.rgb = RGBColor(*font_color)
+            
+            # 提取图像
+            image_list = page.get_images(full=True)
+            for img_index, img in enumerate(image_list):
+                xref = img[0]
+                base_image = pdf_document.extract_image(xref)
+                image_bytes = base_image["image"]
+                image_ext = base_image["ext"]
+                
+                # 将图像添加到 DOCX
+                image_stream = BytesIO(image_bytes)
+                doc.add_picture(image_stream, width=None)  # 可以指定宽度
+
+            # 添加分页符
+            doc.add_page_break()
+        
+        # 保存 DOCX 文件
+        doc.save(docx_path)
+        pdf_document.close()
+    except Exception as e:
+        raise("pdf转docx失败")
 
 def docxtopdf(docx_path, pdf_path):
     if os.path.exists(pdf_path):

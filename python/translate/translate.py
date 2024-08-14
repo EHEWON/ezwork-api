@@ -10,7 +10,6 @@ import db
 from pathlib import Path
 
 import sys
-import traceback
 
 def get(trans, event,texts, index):
     if event.is_set():
