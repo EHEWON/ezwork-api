@@ -380,7 +380,8 @@ def pdftodocx(pdf_path, docx_path):
     print(pdf_path)
     try:
         cv = pdf2docx.Converter(pdf_path)
-        cv.convert(docx_path, multi_processing=True)
+        cv.debug_page(0)
+        cv.convert(docx_path, multi_processing=False)
         cv.close()
     except Exception as e:
         print("error")
@@ -425,14 +426,17 @@ def pdf2docxNext(pdf_path, docx_path):
                                 )
                 elif block["type"] == 1:
                     # 提取图像
-                    img_index = block["image"]
-                    base_image = pdf_document.extract_image(img_index)
-                    image_bytes = base_image["image"]
-                    image_ext = base_image["ext"]
+                    try:
+                        img_index = block["image"]
+                        base_image = pdf_document.extract_image(img_index)
+                        image_bytes = base_image["image"]
+                        image_ext = base_image["ext"]
+                        # 将图像添加到 DOCX
+                        image_stream = BytesIO(image_bytes)
+                        doc.add_picture(image_stream, width=None)  # 可以指定宽度
+                    except Exception as e:
+                        print("图片无法解析")
                     
-                    # 将图像添加到 DOCX
-                    image_stream = BytesIO(image_bytes)
-                    doc.add_picture(image_stream, width=None)  # 可以指定宽度
 
 
             # 添加分页符
