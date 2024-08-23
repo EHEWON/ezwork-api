@@ -1,48 +1,30 @@
-# 使用 Python 3.9 作为基础镜像
-FROM python:3.9
+# 第一阶段：构建 Python 3.9 环境
+FROM python:3.11 AS python-env
 
-# 更新包列表并安装 PHP 8.2 和其他必要的工具
+# 安装所需的 Python 包
+RUN pip install --no-cache-dir openpyxl lxml openai pydantic_core python-docx==1.1.2 python-pptx pdf2docx pymysql PyMuPDF==1.24.7 docx2pdf python-dotenv
+
+# 第二阶段：构建 PHP-FPM 环境
+FROM php:8.2-fpm
+
+# 安装必要的扩展
 RUN apt-get update && apt-get install -y \
     curl \
-    gnupg2 \
-    lsb-release \
-    ca-certificates \
-    && curl -sSL https://packages.sury.org/php/apt.gpg | apt-key add - \
-    && echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/php.list \
-    && apt-get update \
-    && apt-get install -y \
-    php8.2 \
-    php8.2-cli \
-    php8.2-fpm \
-    php8.2-mbstring \
-    php8.2-xml \
-    php8.2-mysql \
-    php8.2-curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    python3.11 \
+    && ln -s /usr/bin/python3.11 /usr/bin/python3 \
+    && docker-php-ext-install pdo pdo_mysql
 
-# 安装 Python 库
-RUN pip install --no-cache-dir \
-    openai \
-    python-docx==1.1.2 \
-    openpyxl \
-    python-pptx \
-    pymysql \
-    PyMuPDF==1.24.7
+# 将 Python 环境中的库复制到 PHP 环境中
+COPY --from=python-env /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/dist-packages
 
-
-# 复制PHP应用程序到容器中
 COPY ./ /var/www/ezwork/
 COPY ./docker.env /var/www/ezwork/.env
-
 
 # 设置工作目录
 WORKDIR /var/www/ezwork/
 
-# PHP-FPM
-CMD service php8.2-fpm start
-
+# 暴露 PHP-FPM 默认端口
 EXPOSE 9000
 
-
-
+# 启动 PHP-FPM
+CMD ["php-fpm"]
