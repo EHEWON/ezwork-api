@@ -218,17 +218,27 @@ class TranslateController extends BaseAuthController {
     public function check(Request $request){
         $params=$request->post();
         $this->validate($params, 'check');
-
+        $api_url=$params['api_url'] ?? '';
+        $api_key=$params['api_key'] ?? '';
+        $m_setting=new Setting();
         if($params['server']=='member'){
-            $api_url=config('openai.api_url');
-            $api_key=config('openai.api_key');
+            $api_setting=$m_setting->getSettingByGroup('api_setting');
+            if(!empty($api_setting)){
+                $api_url=$api_setting['api_url'];
+                $api_key=$api_setting['api_key'];
+            }else{
+                $api_url=config('openai.api_url');
+                $api_key=config('openai.api_key');
+            }
         }
-        // init_openai(api_url, api_key)
-        // status=openai_check(model)
-        // if status:
-        //     return JsonResponse({"code":0, "msg":"success"})
-        // else:
-        //     return JsonResponse({"code":1, "msg":"fail"})
+        $model=$params['model'];
+        $check_main=base_path('python/translate/check.py');
+        $result = shell_exec("python3 $check_main '$api_url' '$api_key' '$model'");
+        if(trim($result)=='OK'){
+            ok('成功');
+        }else{
+            check(false, $result);
+        }
     }
 
     public function del(Request $request, $id){
