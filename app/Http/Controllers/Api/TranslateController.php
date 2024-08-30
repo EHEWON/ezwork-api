@@ -30,16 +30,20 @@ class TranslateController extends BaseAuthController {
                 'threads.required'=>Lang::get('translate.threads_required'),
                 'file_name.required'=>Lang::get('translate.file_name_required'),
                 'file_path.required'=>Lang::get('translate.file_path_required'),
+                'origin_lang.required_if'=>Lang::get('translate.origin_lang_required'),
             ],
             'process'=>[
                 'uuid.required'=>Lang::get('translate.uuid_required')
             ],
-            'check'=>[
+            'check_openai'=>[
                 'server.required'=>Lang::get('translate.server_required'),
                 'server.in'=>Lang::get('translate.server_required'),
                 'api_url.required_if'=>Lang::get('translate.api_url_required'),
                 'api_key.required_if'=>Lang::get('translate.api_key_required'),
                 'model.required'=>Lang::get('translate.model_required'),
+            ],
+            'check_pdf'=>[
+                'file_path.required'=>Lang::get('translate.file_path_required'),
             ],
         ];
     }
@@ -58,15 +62,19 @@ class TranslateController extends BaseAuthController {
                 'threads'=>'required',
                 'file_path'=>'required',
                 'file_name'=>'required',
+                'origin_lang'=>'required_if:scanned,1', // 当 scanned 为 true 时,origin_lang 是必需的
             ],
             'process'=>[
                 'uuid'=>'required',
             ],
-            'check'=>[
+            'check_openai'=>[
                 'server'=>'required|in:openai,member',
                 'api_url'=>'required_if:server,openai',       
                 'api_key'=>'required_if:server,openai',       
                 'model'=>'required',
+            ],
+            'check_pdf'=>[     
+                'file_path'=>'required',
             ],
         ];
     }
@@ -150,6 +158,7 @@ class TranslateController extends BaseAuthController {
             'customer_id'=>$this->customer_id,
             'uuid'=>$uuid,
             'lang'=>$lang,
+            'origin_lang'=>$params['origin_lang'] ?? '', // 添加 origin_lang
             'model'=>$model,
             'type'=>$type,
             'backup_model'=>$backup_model,
@@ -215,9 +224,14 @@ class TranslateController extends BaseAuthController {
         ok(['process'=>$process,'url'=>$url,'count'=>$count,'time'=>$spend]);        
     }
 
-    public function check(Request $request){
+    /**
+     * 判断openai接口是否正常运行
+     * @param  Request $request 
+     * @return 
+     */
+    public function check_openai(Request $request){
         $params=$request->post();
-        $this->validate($params, 'check');
+        $this->validate($params, 'check_openai');
         $api_url=$params['api_url'] ?? '';
         $api_key=$params['api_key'] ?? '';
         $m_setting=new Setting();
@@ -232,12 +246,36 @@ class TranslateController extends BaseAuthController {
             }
         }
         $model=$params['model'];
-        $check_main=base_path('python/translate/check.py');
+        $check_main=base_path('python/translate/check_openai.py');
         $result = shell_exec("python3 $check_main '$api_url' '$api_key' '$model'");
         if(trim($result)=='OK'){
             ok('成功');
         }else{
             check(false, $result);
+        }
+    }
+
+    /**
+     * 判断pdf是否是扫描件
+     * @param  Request $request 
+     * @return 
+     */
+    public function check_pdf(Request $request){
+        $params=$request->post();
+        $this->validate($params, 'check_pdf');
+        $file_path=$params['file_path'];
+        $extension = pathinfo($file_path, PATHINFO_EXTENSION);
+        if(strtolower($extension)!='pdf'){
+            ok(['scanned'=>0]);
+        }
+        $storage_path=storage_path('app/public');
+        $pdf_path=$storage_path.$file_path;
+        $check_main=base_path('python/translate/check_pdf.py');
+        $result = shell_exec("python3 $check_main '$pdf_path'");
+        if(trim($result)=='True'){
+            ok(['scanned'=>1]);
+        }else{
+            ok(['scanned'=>0]);
         }
     }
 

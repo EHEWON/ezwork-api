@@ -21,6 +21,7 @@ Route::post('/translate', [TranslateController::class, 'start']);
 Route::delete('/translate/{id}', [TranslateController::class, 'del'])->where('id','[0-9]+');
 Route::delete('/translate/all', [TranslateController::class, 'delAll']);
 Route::post('/process', [TranslateController::class, 'process']);
-Route::post('/check', [TranslateController::class, 'check']);
+Route::post('/check/openai', [TranslateController::class, 'check_openai']);
+Route::post('/check/pdf', [TranslateController::class, 'check_pdf']);
 Route::get('/storage', [AccountController::class, 'storage']);
 Route::get('/info', [AccountController::class, 'info']);

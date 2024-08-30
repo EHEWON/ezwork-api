@@ -105,6 +105,7 @@ class Translate extends Model{
             'api_key'=>$params['api_key'],
             'threads'=>$params['threads'],
             'customer_id'=>$params['customer_id'],
+            'origin_lang'=>$params['origin_lang'],
             'status'=>'none', 
             'created_at'=>date('Y-m-d H:i:s'),
             'deleted_flag'=>'N',

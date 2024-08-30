@@ -136,20 +136,28 @@ def get_content_by_image(base64_image,target_lang):
 def check(model):
     try:
         message = [
-            {"role": "system", "content": "hi"},
+            {"role": "system", "content": "你通晓世界所有语言,可以用来从一种语言翻译成另一种语言"},
             {"role": "user", "content": "你现在能翻译吗？"}
         ]
         response = openai.chat.completions.create(
-            model=model,  # 使用GPT-3.5版本
+            model=model,
             messages=message
         )
-        # print(model)
-        # print(type(response))
-        # print(response)
-        return True
+        return "OK"
+    except openai.AuthenticationError as e:
+        return "openai密钥或令牌无效"
+    except openai.APIConnectionError as e:
+        return "请求无法与openai服务器或建立安全连接"
+    except openai.PermissionDeniedError as e:
+        return "令牌额度不足"
+    except openai.RateLimitError as e:
+        return "访问速率达到限制,10分钟后再试"
+    except openai.InternalServerError as e:
+        return "当前分组上游负载已饱和，请稍后再试"
+    except openai.APIStatusError as e:
+        return e.response
     except Exception as e:
-        print(e)
-        return False
+        return "当前无法完成翻译"
 
 def process(texts, process_file):
     total=0

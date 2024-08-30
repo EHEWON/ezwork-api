@@ -20,6 +20,7 @@ import shutil
 from urllib.parse import quote
 from io import BytesIO
 from PIL import Image,ImageDraw
+import pytesseract
 # from weasyprint import HTML
 
 def start(trans):
@@ -38,7 +39,10 @@ def start(trans):
     # print(trans['storage_path']+"\n")
     # print(trans['target_file']+"\n")
     # print(os.path.join(trans['storage_path'], trans['target_filepath'])+"\n")
-    pdftodocx(trans['file_path'], origin_docx_path)
+    if is_scanned_pdf(trans['file_path']):
+        pdf_to_text_with_ocr(trans['file_path'],origin_docx_path, trans['origin_lang'])
+    else:
+        pdftodocx(trans['file_path'], origin_docx_path)
     word_trans=copy.copy(trans)
     word_trans['file_path']=origin_docx_path
     word_trans['target_file']=target_docx_path
@@ -465,9 +469,69 @@ def docxtopdf(docx_path, pdf_path):
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     print("sudo {} -f pdf -o {} {}".format(unoconv_path,pdf_path, docx_path))
-    subprocess.run("sudo {} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
+    subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
     print("done")
-   
+
+def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
+    if not is_tesseract_installed():
+        raise Exception("Tesseract未安装,无法进行OCR")
+    
+    # 打开PDF文件
+    document = fitz.open(pdf_path)
+    docx = Document()
+    text = ""
+
+    for page_num in range(len(document)):
+        # 获取页面
+        page = document.load_page(page_num)
+        
+        # 将页面转换为图像
+        pix = page.get_pixmap()
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+        # 使用Tesseract进行OCR
+        text = pytesseract.image_to_string(img, lang=origin_lang)
+        # text += page_text + "\n"
+        paragraph = docx.add_paragraph()
+        run = paragraph.add_run(text)
+        # 设置字体大小
+        run.font.size = Pt(12)
+
+    document.close()
+    docx.save(docx_path)
+
+def is_scanned_pdf(pdf_path):
+    document = fitz.open(pdf_path)
+    # 只检查前几页，通常足以判断
+    pages_to_check = min(5, len(document))
+    for page_num in range(pages_to_check):
+        page = document[page_num]
+        
+        # 检查文本
+        text = page.get_text().strip()
+        if text:
+            document.close()
+            return False
+        # 检查图像
+        image_list = page.get_images()
+        if len(image_list) > 0:
+            # 如果页面只包含一个大图像，很可能是扫描件
+            if len(image_list) == 1:
+                xref = image_list[0][0]
+                img = document.extract_image(xref)
+                if img:
+                    pix = fitz.Pixmap(img["image"])
+                    # 如果图像覆盖了大部分页面，可能是扫描件
+                    if pix.width > page.rect.width * 0.9 and pix.height > page.rect.height * 0.9:
+                        document.close()
+                        return True
+    
+    document.close()
+    return True  # 如果没有找到文本，默认认为是扫描件
+
+def is_tesseract_installed():
+    tesseract_path = shutil.which("tesseract")
+    return tesseract_path is not None
 
 # def save_image(base64_data, path):
 #     image_data = base64.b64decode(base64_data)
