@@ -469,7 +469,7 @@ def docxtopdf(docx_path, pdf_path):
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     print("sudo {} -f pdf -o {} {}".format(unoconv_path,pdf_path, docx_path))
-    subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
+    subprocess.run("sudo {} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
     print("done")
 
 def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
