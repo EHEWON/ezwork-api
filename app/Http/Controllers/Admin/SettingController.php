@@ -109,7 +109,7 @@ class SettingController extends BaseAuthController {
         $params=$request->post();
         $this->validate($params, 'set_other');
         $m_setting=new Setting();
-        foreach(['prompt','threads'] as $alias){
+        foreach(['prompt','threads','email_limit'] as $alias){
             $m_setting->updateSettingByAlias('other_setting',$alias, $params[$alias] ?? '');
         }
         ok();

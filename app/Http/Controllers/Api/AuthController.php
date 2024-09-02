@@ -129,8 +129,15 @@ class AuthController extends BaseController {
     public function register(Request $request) {
         $params=$request->post();
         $this->validate($params, 'register');
-
         $email=$params['email'];
+
+        $m_setting=new Setting();
+        $setting=$m_setting->getSettingByGroup('other_setting');
+        if(!empty($setting['email_limit'])){
+            $limits=explode(',', $setting['email_limit']);
+            $match=array_filter($limits, ($item)=>str_ends_with($email, $item));
+            check(count($match)>1, Lang::get('auth.email_not_allowed'));
+        }
         $m_customer=new Customer();
         $exist=$m_customer->getCustomerByEmail($email);
         check(empty($exist), Lang::get('auth.user_exist'));
@@ -147,7 +154,6 @@ class AuthController extends BaseController {
 
         $token=Crypt::encryptString($customer_id);
 
-        $m_setting=new Setting();
         $users=$m_setting->getSettingByAlias('notice_setting');
         if(!empty($users)){
             $m_user=new User();

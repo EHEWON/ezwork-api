@@ -25,5 +25,6 @@ return [
     'code_invalid' => '邮箱验证码不正确',
     'email_exists' => '该邮箱已经注册',
     'send_email_required' => '请发送邮箱验证码',
+    'email_not_allowed' => '不支持该邮箱后缀注册',
 
 ];

@@ -21,6 +21,8 @@ from urllib.parse import quote
 from io import BytesIO
 from PIL import Image,ImageDraw
 import pytesseract
+import cv2
+import numpy as np
 # from weasyprint import HTML
 
 def start(trans):
@@ -476,25 +478,29 @@ def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
     if not is_tesseract_installed():
         raise Exception("Tesseract未安装,无法进行OCR")
     
-    # 打开PDF文件
     document = fitz.open(pdf_path)
     docx = Document()
-    text = ""
 
     for page_num in range(len(document)):
-        # 获取页面
         page = document.load_page(page_num)
-        
-        # 将页面转换为图像
         pix = page.get_pixmap()
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-
-        # 使用Tesseract进行OCR
-        text = pytesseract.image_to_string(img, lang=origin_lang)
-        # text += page_text + "\n"
+        
+        # 转换为OpenCV格式
+        img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        
+        # 图像预处理
+        img_cv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+        img_cv = cv2.threshold(img_cv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        
+        # 设置自定义配置
+        custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        
+        # OCR处理
+        text = pytesseract.image_to_string(img_cv, lang=origin_lang, config=custom_config)
+        
         paragraph = docx.add_paragraph()
         run = paragraph.add_run(text)
-        # 设置字体大小
         run.font.size = Pt(12)
 
     document.close()
@@ -502,8 +508,10 @@ def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
 
 def is_scanned_pdf(pdf_path):
     document = fitz.open(pdf_path)
+    
     # 只检查前几页，通常足以判断
     pages_to_check = min(5, len(document))
+    
     for page_num in range(pages_to_check):
         page = document[page_num]
         
@@ -512,6 +520,7 @@ def is_scanned_pdf(pdf_path):
         if text:
             document.close()
             return False
+        
         # 检查图像
         image_list = page.get_images()
         if len(image_list) > 0:

@@ -25,5 +25,6 @@ return [
     'code_invalid' => 'Incorrect email verification code',
     'email_exists' => 'This email has already been registered',
     'send_email_required' => 'Please send the email verification code',
+    'email_not_allowed' => 'This email suffix registration is not supported',
 
 ];
