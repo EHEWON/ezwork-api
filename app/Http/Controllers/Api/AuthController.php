@@ -78,6 +78,7 @@ class AuthController extends BaseController {
         $this->validate($params, 'sendByRegister');
 
         $email=$params['email'];
+        $this->check_email_limit($email);
         $m_customer=new Customer();
         $user=$m_customer->getCustomerByEmail($email);
         check(empty($user), Lang::get('auth.email_exists'));
@@ -132,12 +133,7 @@ class AuthController extends BaseController {
         $email=$params['email'];
 
         $m_setting=new Setting();
-        $setting=$m_setting->getSettingByGroup('other_setting');
-        if(!empty($setting['email_limit'])){
-            $limits=explode(',', $setting['email_limit']);
-            $match=array_filter($limits, ($item)=>str_ends_with($email, $item));
-            check(count($match)>1, Lang::get('auth.email_not_allowed'));
-        }
+        $this->check_email_limit($email);
         $m_customer=new Customer();
         $exist=$m_customer->getCustomerByEmail($email);
         check(empty($exist), Lang::get('auth.user_exist'));
@@ -217,5 +213,17 @@ class AuthController extends BaseController {
         $m_customer->changePassword($user['id'], $params['password']);
         $m_send_code->delFindEmailCode($email);
         ok();
+    }
+
+    public function check_email_limit($email){
+        $m_setting=new Setting();
+        $setting=$m_setting->getSettingByGroup('other_setting');
+        if(!empty($setting['email_limit'])){
+            $limits=explode(',', $setting['email_limit']);
+            $match=array_filter($limits, function($item) use($email){
+                return str_ends_with($email, $item);
+            });
+            check(count($match)>0, Lang::get('auth.email_not_allowed'));
+        }
     }
 }
