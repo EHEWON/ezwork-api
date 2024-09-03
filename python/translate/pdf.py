@@ -25,6 +25,9 @@ import cv2
 import numpy as np
 # from weasyprint import HTML
 
+# 将 /usr/local/bin 添加到 PATH
+os.environ["PATH"] += os.pathsep + "/usr/local/bin"
+
 def start(trans):
     texts=[]
     src_pdf = fitz.open(trans['file_path'])
