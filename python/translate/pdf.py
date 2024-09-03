@@ -477,7 +477,7 @@ def docxtopdf(docx_path, pdf_path):
 def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
     if not is_tesseract_installed():
         raise Exception("Tesseract未安装,无法进行OCR")
-    
+    print("ocr start")
     document = fitz.open(pdf_path)
     docx = Document()
 
@@ -502,7 +502,7 @@ def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
         paragraph = docx.add_paragraph()
         run = paragraph.add_run(text)
         run.font.size = Pt(12)
-
+    print("ocr end")
     document.close()
     docx.save(docx_path)
 
