@@ -477,7 +477,7 @@ def docxtopdf(docx_path, pdf_path):
 def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
     if not is_tesseract_installed():
         raise Exception("Tesseract未安装,无法进行OCR")
-    print("ocr start")
+    
     document = fitz.open(pdf_path)
     docx = Document()
 
@@ -494,15 +494,34 @@ def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
         img_cv = cv2.threshold(img_cv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         
         # 设置自定义配置
-        custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        custom_config = r'--oem 3 --psm 6'
         
-        # OCR处理
-        text = pytesseract.image_to_string(img_cv, lang=origin_lang, config=custom_config)
+        try:
+            # 使用 Output.DICT 模式
+            result = pytesseract.image_to_data(img_cv, lang=origin_lang, config=custom_config, output_type=pytesseract.Output.DICT)
+            
+            # 提取文本，忽略空行
+            text = ' '.join([word for word in result['text'] if word.strip()])
+            
+            # 如果文本为空，尝试其他方法
+            if not text:
+                raise Exception("No text extracted")
+                
+        except Exception as e:
+            print(f"OCR处理页面 {page_num + 1} 时出错: {str(e)}")
+            # print("尝试其他方法...")
+            
+            try:
+                # 尝试直接处理图像
+                text = pytesseract.image_to_string(img, lang=origin_lang, config=custom_config)
+            except Exception as e2:
+                # print(f"第二次尝试失败: {str(e2)}")
+                text = ""  # 如果仍然失败，使用空字符串
         
         paragraph = docx.add_paragraph()
         run = paragraph.add_run(text)
         run.font.size = Pt(12)
-    print("ocr end")
+
     document.close()
     docx.save(docx_path)
 
