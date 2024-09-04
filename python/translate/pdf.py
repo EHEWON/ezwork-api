@@ -3,6 +3,7 @@ import fitz
 import re
 import translate
 import common
+import io
 import os
 import sys
 import time
@@ -23,6 +24,7 @@ from PIL import Image,ImageDraw
 import pytesseract
 import cv2
 import numpy as np
+import uuid
 # from weasyprint import HTML
 
 pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
@@ -476,6 +478,11 @@ def docxtopdf(docx_path, pdf_path):
     subprocess.run("sudo {} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
     print("done")
 
+def create_temp_file(suffix='.png'):
+    temp_dir = '/tmp'  # 或者使用其他临时目录
+    filename = f"{uuid.uuid4()}{suffix}"
+    return os.path.join(temp_dir, filename)
+
 def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
     # if not is_tesseract_installed():
     #     raise Exception("Tesseract未安装,无法进行OCR")
@@ -488,37 +495,35 @@ def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
         pix = page.get_pixmap()
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         
-        # 转换为OpenCV格式
-        img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        # 转换为灰度图像
+        img = img.convert('L')
         
-        # 图像预处理
-        img_cv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-        img_cv = cv2.threshold(img_cv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-        
-        # 设置自定义配置
-        custom_config = r'--oem 3 --psm 6'
+        # 将图像保存到内存中的字节流
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
         
         try:
-            # 使用 Output.DICT 模式
-            result = pytesseract.image_to_data(img_cv, lang=origin_lang, config=custom_config, output_type=pytesseract.Output.DICT)
+            # 使用 Tesseract 命令行工具
+            process = subprocess.Popen(
+                ['/usr/local/bin/tesseract', 'stdin', 'stdout', '-l', origin_lang, '--oem', '3', '--psm', '6'],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            stdout, stderr = process.communicate(input=img_byte_arr)
             
-            # 提取文本，忽略空行
-            text = ' '.join([word for word in result['text'] if word.strip()])
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(process.returncode, process.args, stdout, stderr)
             
-            # 如果文本为空，尝试其他方法
-            if not text:
-                raise Exception("No text extracted")
-                
-        except Exception as e:
+            text = stdout.decode('utf-8').strip()
+            
+            # 移除空行和多余的空格
+            text = '\n'.join(line.strip() for line in text.splitlines() if line.strip())
+            
+        except subprocess.CalledProcessError as e:
             print(f"OCR处理页面 {page_num + 1} 时出错: {str(e)}")
-            # print("尝试其他方法...")
-            
-            try:
-                # 尝试直接处理图像
-                text = pytesseract.image_to_string(img, lang=origin_lang, config=custom_config)
-            except Exception as e2:
-                # print(f"第二次尝试失败: {str(e2)}")
-                text = ""  # 如果仍然失败，使用空字符串
+            text = ""  # 如果出错，使用空字符串
         
         paragraph = docx.add_paragraph()
         run = paragraph.add_run(text)
@@ -560,9 +565,8 @@ def is_scanned_pdf(pdf_path):
     return True  # 如果没有找到文本，默认认为是扫描件
 
 def is_tesseract_installed():
-    sys.path.append("/usr/local/bin")
-    tesseract_path = shutil.which("tesseract")
-    return tesseract_path is not None
+    tesseract_path = "/usr/local/bin/tesseract"
+    return os.path.isfile(tesseract_path) and os.access(tesseract_path, os.X_OK)
 
 # def save_image(base64_data, path):
 #     image_data = base64.b64decode(base64_data)
