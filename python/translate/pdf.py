@@ -25,6 +25,7 @@ import cv2
 import numpy as np
 # from weasyprint import HTML
 
+pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
 
 def start(trans):
     texts=[]
