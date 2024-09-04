@@ -559,6 +559,7 @@ def is_scanned_pdf(pdf_path):
     return True  # 如果没有找到文本，默认认为是扫描件
 
 def is_tesseract_installed():
+    sys.path.append("/usr/local/bin")
     tesseract_path = shutil.which("tesseract")
     return tesseract_path is not None
 
