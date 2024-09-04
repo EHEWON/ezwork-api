@@ -476,8 +476,8 @@ def docxtopdf(docx_path, pdf_path):
     print("done")
 
 def pdf_to_text_with_ocr(pdf_path, docx_path, origin_lang):
-    if not is_tesseract_installed():
-        raise Exception("Tesseract未安装,无法进行OCR")
+    # if not is_tesseract_installed():
+    #     raise Exception("Tesseract未安装,无法进行OCR")
     
     document = fitz.open(pdf_path)
     docx = Document()
