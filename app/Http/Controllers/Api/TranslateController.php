@@ -273,7 +273,7 @@ class TranslateController extends BaseAuthController {
         $check_main=base_path('python/translate/check_pdf.py');
         // echo "python3 $check_main '$pdf_path'";
         $result = shell_exec("python3 -u $check_main '$pdf_path' 2>&1");
-        check($result=='True' || $result=='Flase', $result);
+        check(trim($result)=='True' || trim($result)=='False', $result);
         if(trim($result)=='True'){
             ok(['scanned'=>1]);
         }else{
