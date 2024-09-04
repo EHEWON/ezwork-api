@@ -18,6 +18,7 @@ class Customer extends Model{
     public function getCustomers($params, $page=1, $limit=20){
         $query=DB::table($this->table);
         $query->selectRaw('id,customer_no,email,level,status,created_at');
+        $query->where('deleted_flag','N');
         if(!empty($params['keyword'])){
             $query->where(function($q) use($params){
                 $keyword='%'.$params['keyword'].'%';
