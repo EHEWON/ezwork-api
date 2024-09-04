@@ -169,7 +169,7 @@ class TranslateController extends BaseAuthController {
         ]);
         $m_translate->startTranslate($id);
         echo "sudo python3 $translate_main $uuid $storage_path".PHP_EOL;
-        $cmd = shell_exec("sudo python3 $translate_main $uuid $storage_path");
+        $cmd = shell_exec("sudo python3 $translate_main $uuid $storage_path  2>&1");
         echo $cmd;
         // if($this->checkEndTranslate($uuid)){
         //     $m_translate->endTranslate($id, filesize($target_storage_path));
@@ -246,7 +246,7 @@ class TranslateController extends BaseAuthController {
             }
         }
         $model=$params['model'];
-        $check_main=base_path('python/translate/check_openai.py');
+        $check_main=base_path('python/translate/check_openai.py 2>&1');
         $result = shell_exec("python3 $check_main '$api_url' '$api_key' '$model'");
         if(trim($result)=='OK'){
             ok('成功');
@@ -271,7 +271,9 @@ class TranslateController extends BaseAuthController {
         $storage_path=storage_path('app/public');
         $pdf_path=$storage_path.$file_path;
         $check_main=base_path('python/translate/check_pdf.py');
-        $result = shell_exec("python3 $check_main '$pdf_path'");
+        // echo "python3 $check_main '$pdf_path'";
+        $result = shell_exec("python3 -u $check_main '$pdf_path' 2>&1");
+        check($result=='True' || $result=='Flase', $result);
         if(trim($result)=='True'){
             ok(['scanned'=>1]);
         }else{
