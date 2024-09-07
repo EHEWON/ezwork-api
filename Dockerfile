@@ -10,18 +10,25 @@ FROM php:8.2-fpm
 # 安装必要的扩展
 RUN apt-get update && apt-get install -y \
     curl \
+    git \
+    libzip-dev \
     python3.11 \
     && ln -s /usr/bin/python3.11 /usr/bin/python3 \
-    && docker-php-ext-install pdo pdo_mysql
+    && docker-php-ext-install pdo pdo_mysql zip
 
 # 将 Python 环境中的库复制到 PHP 环境中
 COPY --from=python-env /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/dist-packages
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 COPY ./ /var/www/ezwork/
 COPY ./docker.env /var/www/ezwork/.env
 
 # 设置工作目录
 WORKDIR /var/www/ezwork/
+RUN chmod -R 777 storage
+
+RUN composer install
 
 # 暴露 PHP-FPM 默认端口
 EXPOSE 9000
