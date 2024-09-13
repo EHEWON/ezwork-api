@@ -1,5 +1,5 @@
 
-FROM ehewon/ezwork-php
+FROM ehewon/ezwork-ai-php
 
 # 设置工作目录
 WORKDIR /var/www/ezwork/
