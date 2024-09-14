@@ -27,8 +27,11 @@ class Translate extends Model{
         if(!empty($params['customer_id'])){
             $query->where('customer_id', $params['customer_id']);
         }
+        if(!empty($params['skip_uuids']) && is_array($params['skip_uuids'])){
+            $query->whereNotIn('uuid', $params['skip_uuids']);
+        }
         $total=$query->clone()->count();
-        $query->selectRaw('t.id,t.translate_no,t.status,t.origin_filename,t.origin_filepath,t.lang,t.target_filepath,t.start_at,t.end_at,c.customer_no');
+        $query->selectRaw('t.id,t.translate_no,t.status,t.origin_filename,t.origin_filepath,t.lang,t.target_filepath,t.start_at,t.end_at,t.process,c.customer_no');
         $query->leftJoin('customer as c','c.id','=','t.customer_id');
         $query->skip(($page-1)*$limit)->limit($limit);
         $results=$query->orderBy('id','desc')->get()->toArray();

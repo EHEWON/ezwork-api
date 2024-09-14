@@ -64,7 +64,7 @@ def get(trans, event,texts, index):
     texts[index]=text
     # print(text)
     if not event.is_set():
-        process(texts, process_file)
+        process(texts, process_file,translate_id)
     exit(0)
 
 def req(text,target_lang,model,prompt):
@@ -159,7 +159,7 @@ def check(model):
     except Exception as e:
         return "当前无法完成翻译"
 
-def process(texts, process_file):
+def process(texts, process_file, translate_id):
     total=0
     complete=0
     for text in texts:
@@ -169,11 +169,14 @@ def process(texts, process_file):
     with open(process_file, 'w') as f:
         if total!=complete:
             f.write(str(total)+"$$$"+str(complete))
+            if(total!=0):
+                process=format((complete/total)*100, '.1f')
+                db.execute("update translate set process=%s where id=%s", str(process), translate_id)
         f.close()
 
 def complete(trans,text_count,spend_time):
     target_filesize=os.stat(trans['target_file']).st_size
-    db.execute("update translate set status='done',end_at=now(),target_filesize=%s,word_count=%s where id=%s", target_filesize, text_count, trans['id'])
+    db.execute("update translate set status='done',end_at=now(),process=100,target_filesize=%s,word_count=%s where id=%s", target_filesize, text_count, trans['id'])
     with open(trans['process_file'], 'w') as f:
         f.write("1$$$1$$$"+str(text_count)+"$$$"+spend_time)
         f.close()
