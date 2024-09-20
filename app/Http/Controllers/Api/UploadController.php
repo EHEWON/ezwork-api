@@ -32,9 +32,11 @@ class UploadController extends BaseAuthController {
         $file=$request->file('file');
         if($file->isValid()){
             $filesize=filesize($file->getPathname());
-            $m_customer=new Customer();
-            $avaiableStorage=$m_customer->getCustomerAvaiableStorage($this->customer_id);
-            check($avaiableStorage>$filesize, '存储空间不足');
+            if($this->customer_id!=0){
+                $m_customer=new Customer();
+                $avaiableStorage=$m_customer->getCustomerAvaiableStorage($this->customer_id);
+                check($avaiableStorage>$filesize, '存储空间不足');
+            }
             $ext=$file->getClientOriginalExtension();
             $hash = $file->hashName() ? $file->hashName() : Str::random(40);
             $datetime=date('ymd');

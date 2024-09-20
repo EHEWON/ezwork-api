@@ -21,6 +21,9 @@ class SettingController extends BaseAuthController {
             'set_other'=>[
                 'prompt.required' => Lang::get('setting.prompt_required'),
                 'threads.required' => Lang::get('setting.threads_required'),
+            ],
+            'set_site'=>[
+                'version.required' => Lang::get('setting.version_required'),
             ]
         ];
     }
@@ -35,6 +38,9 @@ class SettingController extends BaseAuthController {
             'set_other'=>[
                 'prompt'=>'required',
                 'threads'=>'required',
+            ],
+            'set_site'=>[
+                'version'=>'required',
             ]
         ];
     }
@@ -111,6 +117,31 @@ class SettingController extends BaseAuthController {
         $m_setting=new Setting();
         foreach(['prompt','threads','email_limit'] as $alias){
             $m_setting->updateSettingByAlias('other_setting',$alias, $params[$alias] ?? '');
+        }
+        ok();
+    }
+
+    /**
+     * 获取站点设置
+     * @param  Request $request 
+     * @return 
+     */
+    public function get_site(Request $request){
+        $m_setting=new Setting();
+        $result=$m_setting->getSettingByGroup('site_setting');
+        ok($result);
+    }
+
+    /**
+     * 设置站点
+     * @return 
+     */
+    public function set_site(Request $request){
+        $params=$request->post();
+        $this->validate($params, 'set_site');
+        $m_setting=new Setting();
+        foreach(['version'] as $alias){
+            $m_setting->updateSettingByAlias('site_setting',$alias, $params[$alias] ?? '');
         }
         ok();
     }

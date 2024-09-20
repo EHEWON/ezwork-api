@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\TranslateController;
+use App\Http\Controllers\Api\CommonController;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register/send', [AuthController::class, 'sendByRegister']);
@@ -25,3 +26,5 @@ Route::post('/check/openai', [TranslateController::class, 'check_openai']);
 Route::post('/check/pdf', [TranslateController::class, 'check_pdf']);
 Route::get('/storage', [AccountController::class, 'storage']);
 Route::get('/info', [AccountController::class, 'info']);
+
+Route::get('/common/setting', [CommonController::class, 'setting']);

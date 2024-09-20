@@ -17,6 +17,7 @@ class Translate extends Model{
      */
     public function getTranslates($params, $page=1, $limit=20){
         $query=DB::table($this->table,'t')->where('t.deleted_flag','N');
+        $query->whereNot('customer_id',0);
         if(!empty($params['keyword'])){
             $query->where(function($q) use($params){
                 $keyword='%'.$params['keyword'].'%';
@@ -24,6 +25,7 @@ class Translate extends Model{
                     ->orWhere('origin_filename','like',$keyword);
             });
         }
+
         if(!empty($params['customer_id'])){
             $query->where('customer_id', $params['customer_id']);
         }

@@ -32,3 +32,6 @@ Route::post('/setting/api', [SettingController::class, 'set_api']);
 
 Route::get('/setting/other', [SettingController::class, 'get_other']);
 Route::post('/setting/other', [SettingController::class, 'set_other']);
+
+Route::get('/setting/site', [SettingController::class, 'get_site']);
+Route::post('/setting/site', [SettingController::class, 'set_site']);

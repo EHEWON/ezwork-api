@@ -109,6 +109,9 @@ class AccountController extends BaseAuthController {
         $m_customer=new Customer();
 
         $customer=$m_customer->getCustomerInfo($this->customer_id);
+        if(empty($this->customer_id)){
+            ok([]);
+        }
         $usedsize=$m_translate->getCustomerAllFileSize($this->customer_id);
         $storage=bcdiv($customer['storage'], 1048576, 2);
         $used=bcdiv($usedsize, 1048576, 2);

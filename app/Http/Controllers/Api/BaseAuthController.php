@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
+use App\Models\Setting;
 
 abstract class BaseAuthController extends BaseController {
 
@@ -30,6 +31,10 @@ abstract class BaseAuthController extends BaseController {
     public function __construct(){
 
         parent::__construct();
+
+        $m_setting=new Setting();
+        $setting=$m_setting->getSettingByGroup('site_setting');
+        if(strtolower($setting['version'])=='community') return;
 
         $method=Request::method();
         $action=Request::segment(3);
