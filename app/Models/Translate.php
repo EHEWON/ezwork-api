@@ -27,6 +27,9 @@ class Translate extends Model{
         if(!empty($params['customer_id'])){
             $query->where('customer_id', $params['customer_id']);
         }
+        if(!empty($params['status'])){
+            $query->where('t.status', $params['status']);
+        }
         if(!empty($params['skip_uuids']) && is_array($params['skip_uuids'])){
             $query->whereNotIn('uuid', $params['skip_uuids']);
         }
@@ -39,6 +42,7 @@ class Translate extends Model{
             $result->status_name=$this->getStatusName($result->status);
             $result->spend_time=spend_time($result->start_at, $result->end_at);
             $result->origin_filename=urldecode($result->origin_filename);
+            $result->target_filepath_copy=$result->target_filepath;
             if(strtolower($result->status)=='done'){
                 $result->target_filepath='/storage/'.trim($result->target_filepath,'/');
             }else{
