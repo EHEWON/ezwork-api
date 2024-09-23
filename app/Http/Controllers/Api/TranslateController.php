@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
  */
 class TranslateController extends BaseAuthController {
 
-    protected $skip_methods=['setting','test'];
+    protected $skip_methods=['setting','test', 'finishTotal'];
 
     public function getMessages(){
         return [
@@ -305,6 +305,17 @@ class TranslateController extends BaseAuthController {
             }
         }
         return false;
+    }
+
+    /**
+     * 已完成翻译的总量
+     * @param  Request $request 
+     * @return 
+     */
+    public function finishTotal(Request $request){
+        $m_translate=new Translate();
+        $total=$m_translate->getFinishTotal();
+        ok(['total'=>$total]);
     }
 
     public function test(Request $request){
