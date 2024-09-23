@@ -164,4 +164,11 @@ class Translate extends Model{
             ->value('size');
         return $size;
     }
+
+    public function getFinishTotal(){
+        return DB::table($this->table)
+            ->where('status','done')
+            ->where('deleted_flag','N')
+            ->count();
+    }
 }
