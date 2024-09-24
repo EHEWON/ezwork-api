@@ -347,7 +347,6 @@ class TranslateController extends BaseAuthController {
         foreach ($results['data'] as $res) {
             $fullpath=$storage_path.trim($res->target_filepath_copy,'/');
             if (file_exists($fullpath)) {
-                echo '111'.PHP_EOL;
                 $zip->addFile($fullpath, basename($fullpath)); // 添加文件到 ZIP 中
             } else {
                 
