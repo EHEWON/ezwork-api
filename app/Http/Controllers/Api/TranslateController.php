@@ -327,9 +327,9 @@ class TranslateController extends BaseAuthController {
     public function downloadAll(Request $request){
         $m_translate=new Translate();
         $params['customer_id']=$this->customer_id;
-        if(empty($this->customer_id)){
-            die('没有文件可下载');
-        }
+        // if(empty($this->customer_id)){
+        //     die('没有文件可下载');
+        // }
         $params['status']='done';
         $results=$m_translate->getTranslates($params, 1, 100);
         if(empty($results['data'])){
@@ -345,14 +345,18 @@ class TranslateController extends BaseAuthController {
         $storage_path=storage_path('app/public/');
         // 将文件添加到 ZIP
         foreach ($results['data'] as $res) {
-            $fullpath=$storage_path.trim($res->target_filepath,'/');
+            $fullpath=$storage_path.trim($res->target_filepath_copy,'/');
             if (file_exists($fullpath)) {
+                echo '111'.PHP_EOL;
                 $zip->addFile($fullpath, basename($fullpath)); // 添加文件到 ZIP 中
             } else {
                 
             }
         }
         $zip->close();
+        if(!file_exists($zipFileName)){
+            die('打包失败');
+        }
         // 设置头信息进行下载
         header('Content-Type: application/zip');
         header('Content-Disposition: attachment; filename="' . basename($zipFileName) . '"');
@@ -361,7 +365,7 @@ class TranslateController extends BaseAuthController {
         // 读取文件内容并输出
         readfile($zipFileName);
         // 删除生成的 ZIP 文件
-        unlink($zipFileName);
+        @unlink($zipFileName);
     }
 
     public function test(Request $request){
