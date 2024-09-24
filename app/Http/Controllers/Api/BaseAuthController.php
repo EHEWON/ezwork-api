@@ -40,7 +40,7 @@ abstract class BaseAuthController extends BaseController {
         $action=Request::segment(3);
         if(in_array($action, $this->skip_methods)) return;
 
-        $token=Request::header('token');
+        $token=empty(Request::header('token')) ? Request::input('token') : Request::header('token');
 
         check(!empty($token), Lang::get('account.need_login'));
 

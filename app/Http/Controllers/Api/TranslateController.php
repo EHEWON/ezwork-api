@@ -327,9 +327,9 @@ class TranslateController extends BaseAuthController {
     public function downloadAll(Request $request){
         $m_translate=new Translate();
         $params['customer_id']=$this->customer_id;
-        // if(empty($this->customer_id)){
-        //     die('没有文件可下载');
-        // }
+        if(empty($this->customer_id)){
+            die('没有文件可下载');
+        }
         $params['status']='done';
         $results=$m_translate->getTranslates($params, 1, 100);
         if(empty($results['data'])){
