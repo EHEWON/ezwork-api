@@ -7,6 +7,7 @@ use App\Models\Translate;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
+use ZipArchive;
 
 /**
  * 翻译记录
@@ -316,6 +317,51 @@ class TranslateController extends BaseAuthController {
         $m_translate=new Translate();
         $total=$m_translate->getFinishTotal();
         ok(['total'=>$total]);
+    }
+
+    /**
+     * 下载全部
+     * @param  Request $request 
+     * @return 
+     */
+    public function downloadAll(Request $request){
+        $m_translate=new Translate();
+        $params['customer_id']=$this->customer_id;
+        if(empty($this->customer_id)){
+            die('没有文件可下载');
+        }
+        $params['status']='done';
+        $results=$m_translate->getTranslates($params, 1, 100);
+        if(empty($results['data'])){
+            die('没有文件可下载');
+        }
+
+        $zip = new ZipArchive();
+        $zipFileName = 'files-'.date('Ymd').rand(100000,999999).'.zip';
+
+        if ($zip->open($zipFileName, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+            die("无法打开 <$zipFileName>");
+        }
+        $storage_path=storage_path('app/public/');
+        // 将文件添加到 ZIP
+        foreach ($results['data'] as $res) {
+            $fullpath=$storage_path.trim($res->target_filepath,'/');
+            if (file_exists($fullpath)) {
+                $zip->addFile($fullpath, basename($fullpath)); // 添加文件到 ZIP 中
+            } else {
+                
+            }
+        }
+        $zip->close();
+        // 设置头信息进行下载
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $zipFileName . '"');
+        header('Content-Length: ' . filesize($zipFileName));
+        
+        // 读取文件内容并输出
+        readfile($zipFileName);
+        // 删除生成的 ZIP 文件
+        unlink($zipFileName);
     }
 
     public function test(Request $request){
