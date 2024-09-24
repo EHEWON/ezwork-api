@@ -337,7 +337,7 @@ class TranslateController extends BaseAuthController {
         }
 
         $zip = new ZipArchive();
-        $zipFileName = 'files-'.date('Ymd').rand(100000,999999).'.zip';
+        $zipFileName = '/tmp/files-'.date('Ymd').rand(100000,999999).'.zip';
 
         if ($zip->open($zipFileName, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
             die("无法打开 <$zipFileName>");
@@ -355,7 +355,7 @@ class TranslateController extends BaseAuthController {
         $zip->close();
         // 设置头信息进行下载
         header('Content-Type: application/zip');
-        header('Content-Disposition: attachment; filename="' . $zipFileName . '"');
+        header('Content-Disposition: attachment; filename="' . basename($zipFileName) . '"');
         header('Content-Length: ' . filesize($zipFileName));
         
         // 读取文件内容并输出
