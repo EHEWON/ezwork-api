@@ -14,7 +14,7 @@ use ZipArchive;
  */
 class TranslateController extends BaseAuthController {
 
-    protected $skip_methods=['setting','test', 'finishTotal','check_openai'];
+    protected $skip_methods=['setting','test', 'finishTotal','check_openai','openai'];
 
     public function getMessages(){
         return [
