@@ -17,7 +17,7 @@ class CommonController extends BaseAuthController {
         $m_setting=new Setting();
         $setting=$m_setting->getSettingByGroup('site_setting');
         ok([
-            'version'=>$setting['version']
+            'version'=>$setting['version'] ?? 'business'
         ]);
     }
 }
