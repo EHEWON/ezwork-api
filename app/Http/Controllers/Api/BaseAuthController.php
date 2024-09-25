@@ -34,7 +34,7 @@ abstract class BaseAuthController extends BaseController {
 
         $m_setting=new Setting();
         $setting=$m_setting->getSettingByGroup('site_setting');
-        if(strtolower($setting['version'])=='community') return;
+        if(!empty($setting['version']) && strtolower($setting['version'])=='community') return;
 
         $method=Request::method();
         $action=Request::segment(3);
