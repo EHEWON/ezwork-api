@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Routing\Controller;
 
 class CommonController extends Controller {
 
