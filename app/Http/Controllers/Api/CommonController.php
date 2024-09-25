@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Lang;
 
-class CommonController extends BaseAuthController {
+class CommonController extends Controller {
 
     /**
      * 获取相关配置
