@@ -8,6 +8,7 @@ import os
 import pymysql
 import db
 from pathlib import Path
+import logging
 
 import sys
 
@@ -74,6 +75,10 @@ def req(text,target_lang,model,prompt):
     ]
     # print(openai.base_url)
     # print(message)
+    # 禁用 OpenAI 的日志输出
+    logging.getLogger("openai").setLevel(logging.WARNING)
+    # 禁用 httpx 的日志输出
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     response = openai.chat.completions.create(
         model=model,  # 使用GPT-3.5版本
         messages=message
