@@ -20,6 +20,8 @@ Route::post('/customer/status/{id}', [CustomerController::class, 'status'])->whe
 
 Route::get('/translates', [TranslateController::class, 'index']);
 Route::delete('/translate/{id}', [TranslateController::class, 'delete']);
+Route::post('/translates/delete', [TranslateController::class, 'deleteMore']);
+Route::post('/translates/download', [TranslateController::class, 'downloadMore']);
 
 Route::post('/image', [ImageController::class, 'index']);
 
