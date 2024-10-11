@@ -53,7 +53,7 @@ class TranslateController extends BaseAuthController {
      * @return
      */
     public function deleteMore(Request $request){
-        $ids = $request->input('ids');
+        $ids = $request->input('ids', []);
         $m_customer=new Translate();
         $m_customer->deleteMoreTranslate($ids);
         ok();
@@ -65,7 +65,7 @@ class TranslateController extends BaseAuthController {
      * @return
      */
     public function downloadMore(Request $request){
-        $ids = $request->input('ids');
+        $ids = $request->input('ids', []);
         $m_customer=new Translate();
         $file = $m_customer->downloadMoreTranslate($ids);
         ok($file);
