@@ -394,4 +394,87 @@ def replace_paragraph_text(paragraph, texts, text_count, onlyText, appendTo):
         set_paragraph_linespace(paragraph)
     if onlyText:
         clear_image(paragraph)
+<<<<<<< Updated upstream
         
+=======
+        
+def read_comments_from_docx(docx_path, texts):
+    comments = []
+    with zipfile.ZipFile(docx_path, 'r') as docx:
+        # 尝试读取批注文件
+        if 'word/comments.xml' in docx.namelist():
+            with docx.open('word/comments.xml') as comments_file:
+                # 解析 XML
+                tree = ET.parse(comments_file)
+                root = tree.getroot()
+                
+                # 定义命名空间
+                namespace = {'ns0': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+                
+                # 查找所有批注
+                for comment in root.findall('ns0:comment', namespace):
+                    comment_id = comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id')
+                    author = comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}author')
+                    date = comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}date')
+                    text = ''.join(t.text for p in comment.findall('.//ns0:p', namespace) for r in p.findall('.//ns0:r', namespace) for t in r.findall('.//ns0:t', namespace))
+                    append_comment(text, comment_id, texts)
+
+def modify_comment_in_docx(docx_path, texts):
+    # 创建一个临时文件名，保留原始路径
+    temp_docx_path = os.path.join(os.path.dirname(docx_path), 'temp_' + os.path.basename(docx_path))
+
+    # 打开原始 docx 文件
+    with zipfile.ZipFile(docx_path, 'r') as docx:
+        # 创建一个新的 docx 文件
+        with zipfile.ZipFile(temp_docx_path, 'w') as new_docx:
+            for item in docx.infolist():
+                # 读取每个文件
+                with docx.open(item) as file:
+                    if item.filename == 'word/comments.xml':
+                        # 解析批注 XML
+                        tree = ET.parse(file)
+                        root = tree.getroot()
+                        
+                        # 定义命名空间
+                        namespace = {'ns0': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+                        
+                        # 查找并修改批注
+                        for comment in root.findall('ns0:comment', namespace):
+                            text = ''.join(t.text for p in comment.findall('.//ns0:p', namespace) for r in p.findall('.//ns0:r', namespace) for t in r.findall('.//ns0:t', namespace))
+                            if check_text(text):
+                                for newitem in texts:
+                                    # text_count+=newitem.get('count',0)
+                                    new_text=newitem.get('text',"")
+                                    comment_id=newitem.get('comment_id',"")
+                                    # print("new_text:",new_text)
+                                    # print("comment_id:",comment_id)
+                                    # print("origin_id:",comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id'))
+                                    if comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id') == comment_id:
+                                        
+                                        # 清除现有段落
+                                        for p in comment.findall('.//ns0:t', namespace):
+                                                # 删除 ns0:t 元素
+                                            # comment.remove(p)  # 删除 ns0:t 元素
+
+                                            # # 创建新的 ns0:t 元素
+                                            # new_text_elem = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
+                                            # new_text_elem.text = new_text  # 设置新的文本内容
+
+                                            # # 将新的 ns0:t 元素添加到段落中
+                                            # r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')  # 创建新的 run 元素
+                                            # r.append(new_text_elem)  # 将新的 ns0:t 添加到 run 中
+                                            # p.append(r)  # 将 run 添加到段落中
+                                            p.text=new_text
+                        # 打印修改后的 XML 内容
+                        modified_xml = ET.tostring(root, encoding='utf-8', xml_declaration=True).decode('utf-8')
+                        # print(modified_xml)
+                        # 将修改后的 XML 写入新的 docx 文件
+                        new_docx.writestr(item.filename, modified_xml)
+                    else:
+                        # 其他文件直接写入新的 docx 文件
+                        new_docx.writestr(item.filename, file.read())
+
+    # print(temp_docx_path)
+    # 替换原始文件
+    os.replace(temp_docx_path, docx_path)
+>>>>>>> Stashed changes
