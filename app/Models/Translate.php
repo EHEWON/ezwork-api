@@ -189,7 +189,7 @@ class Translate extends Model{
         $files = $this->whereIn('id', $ids)->pluck('target_filepath')->toArray();
         $zipName = implode('_', $ids) . '.zip';
         if (Storage::exists('download/' . $zipName)){
-            return '/download/' . $zipName;
+            return '/storage/download/' . $zipName;
         }
         $zipPath = storage_path('app/public/download/' . $zipName);
 
@@ -203,6 +203,6 @@ class Translate extends Model{
             $zip->close();
         }
 
-        return '/download/' . $zipName;
+        return '/storage/download/' . $zipName;
     }
 }
