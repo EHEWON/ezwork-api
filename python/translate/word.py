@@ -394,9 +394,6 @@ def replace_paragraph_text(paragraph, texts, text_count, onlyText, appendTo):
         set_paragraph_linespace(paragraph)
     if onlyText:
         clear_image(paragraph)
-<<<<<<< Updated upstream
-        
-=======
         
 def read_comments_from_docx(docx_path, texts):
     comments = []
@@ -477,4 +474,3 @@ def modify_comment_in_docx(docx_path, texts):
     # print(temp_docx_path)
     # 替换原始文件
     os.replace(temp_docx_path, docx_path)
->>>>>>> Stashed changes
