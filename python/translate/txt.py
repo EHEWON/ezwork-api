@@ -32,13 +32,14 @@ def start(trans):
     max_word=1000
     # 翻译每个段落
     for paragraph in paragraphs:
-        # 如果段落长度超过 1000 字，进行分割
-        if len(paragraph) > max_word:
-            sub_paragraphs = split_paragraph(paragraph, max_word)
-            for sub_paragraph in sub_paragraphs:
-                texts.append({"text":sub_paragraph,"origin":sub_paragraph, "complete":False, "sub":True})
-        else:
-            texts.append({"text":paragraph,"origin":paragraph, "complete":False, "sub":False})
+        if check_text(paragraph):
+            # 如果段落长度超过 1000 字，进行分割
+            if len(paragraph) > max_word:
+                sub_paragraphs = split_paragraph(paragraph, max_word)
+                for sub_paragraph in sub_paragraphs:
+                    texts.append({"text":sub_paragraph,"origin":sub_paragraph, "complete":False, "sub":True})
+            else:
+                texts.append({"text":paragraph,"origin":paragraph, "complete":False, "sub":False})
 
     # print(texts)
     max_run=max_threads if len(texts)>max_threads else len(texts)
@@ -126,3 +127,5 @@ def split_paragraph(paragraph, max_length):
 
     return parts
 
+def check_text(text):
+    return text!=None and len(text)>0 and not common.is_all_punc(text) 
