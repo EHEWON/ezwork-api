@@ -42,24 +42,31 @@ def get(trans, event,texts, index):
         # print(text)
         # print(datetime.datetime.now())
     except openai.AuthenticationError as e:
-        use_backup_model(trans, event,texts, index, "openai密钥或令牌无效")
+        return use_backup_model(trans, event,texts, index, "openai密钥或令牌无效")
     except openai.APIConnectionError as e:
-        use_backup_model(trans, event,texts, index, "请求无法与openai服务器或建立安全连接")
+        return use_backup_model(trans, event,texts, index, "请求无法与openai服务器或建立安全连接")
     except openai.PermissionDeniedError as e:
-        use_backup_model(trans, event,texts, index, "令牌额度不足")
+        return use_backup_model(trans, event,texts, index, "令牌额度不足")
     except openai.RateLimitError as e:
-        use_backup_model(trans, event,texts, index, "访问速率达到限制,10分钟后再试")
+        return use_backup_model(trans, event,texts, index, "访问速率达到限制,10分钟后再试")
     except openai.InternalServerError as e:
-        use_backup_model(trans, event,texts, index, "当前分组上游负载已饱和，请稍后再试")
+        return use_backup_model(trans, event,texts, index, "当前分组上游负载已饱和，请稍后再试")
     except openai.APIStatusError as e:
-        use_backup_model(trans, event,texts, index, e.response)
+        return use_backup_model(trans, event,texts, index, e.response)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
         print(f"Error occurred on line: {line_number}")
         print(e)
+        if "retry" not in text:
+            text["retry"]=0
+        text["retry"]+=1
+        if text["retry"]<=3:
+            get(trans, event,texts, index)
+            return
+        else:
+            text['complete']=True
         # traceback.print_exc()
-        text['complete']=True
         # print("translate error")
     texts[index]=text
     # print(text)
