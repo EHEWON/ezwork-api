@@ -5,7 +5,6 @@ FROM ehewon/ezwork-ai-php
 WORKDIR /var/www/ezwork/
 
 COPY ./ /var/www/ezwork/
-COPY docker.env /var/www/ezwork/.env
 
 RUN chmod -R 777 storage
 
