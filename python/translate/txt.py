@@ -32,13 +32,14 @@ def start(trans):
     max_word=1000
     # 翻译每个段落
     for paragraph in paragraphs:
-        # 如果段落长度超过 1000 字，进行分割
-        if len(paragraph) > max_word:
-            sub_paragraphs = split_paragraph(paragraph, max_word)
-            for sub_paragraph in sub_paragraphs:
-                texts.append({"text":sub_paragraph, "complete":False, "sub":True})
-        else:
-            texts.append({"text":paragraph, "complete":False, "sub":False})
+        if check_text(paragraph):
+            # 如果段落长度超过 1000 字，进行分割
+            if len(paragraph) > max_word:
+                sub_paragraphs = split_paragraph(paragraph, max_word)
+                for sub_paragraph in sub_paragraphs:
+                    texts.append({"text":sub_paragraph,"origin":sub_paragraph, "complete":False, "sub":True})
+            else:
+                texts.append({"text":paragraph,"origin":paragraph, "complete":False, "sub":False})
 
     # print(texts)
     max_run=max_threads if len(texts)>max_threads else len(texts)
@@ -65,15 +66,35 @@ def start(trans):
 
     text_count=0
     # print(texts)
-    
+    trans_type=trans['type']
+    onlyTransText=False
+    if trans_type=="trans_text_only_inherit" or trans_type=="trans_text_only_new" or trans_type=="trans_all_only_new" or trans_type=="trans_all_only_inherit":
+        onlyTransText=True
+
     # 将翻译结果写入新的 TXT 文件
     try:
         with open(trans['target_file'], 'w', encoding='utf-8') as file:
+            translated_paragraph=""
+            origin_paragraph=""
             for item in texts:
                 if item["sub"]:
-                    file.write(item["text"])
+                    translated_paragraph+=item["text"]
+                    origin_paragraph+=item["origin"]
                 else:
+                    if translated_paragraph!="":
+                        if onlyTransText==False:
+                            file.write(origin_paragraph+'\n')
+                        file.write(translated_paragraph+'\n\n')
+                        translated_paragraph=""
+                        origin_paragraph=""
+                    if onlyTransText==False:
+                        file.write(item["origin"] + '\n')
                     file.write(item["text"] + '\n\n')
+
+            if translated_paragraph!="":
+                if onlyTransText==False:
+                    file.write(origin_paragraph+'\n')
+                file.write(translated_paragraph+'\n')
     except Exception as e:
         print(f"无法写入文件 {target_file_path}: {e}")
         return False
@@ -106,3 +127,5 @@ def split_paragraph(paragraph, max_length):
 
     return parts
 
+def check_text(text):
+    return text!=None and len(text)>0 and not common.is_all_punc(text) 
