@@ -29,39 +29,57 @@ def start(trans):
     if trans_type=="trans_text_only_inherit" or trans_type=="trans_text_only_new" or trans_type=="trans_all_only_new" or trans_type=="trans_all_only_inherit":
         keepBoth=False
 
-    # 按段落分割内容
-    paragraphs = content.split('\n')  # 假设段落之间用两个换行符分隔
+    # 按段落分割内容，始终使用换行符分隔
+    paragraphs = content.split('\n')  # 假设段落之间用换行符分隔
     # 支持最多单词量
-    max_word=1000
+    max_word = 1000
     texts = []
     current_text = ""  # 用于累加当前段落
+
     for paragraph in paragraphs:
-        if check_text(paragraph):
-            # 如果段落长度超过 max_word，进行处理
-            if len(paragraph) > max_word:
-                # 处理当前累加的文本，如果超出 max_word，先将其追加到 texts
-                if current_text:
-                    texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False})
-                    current_text = ""  # 重置当前文本
+        if check_text(paragraph) or paragraph.strip() == "":  # 检查段落是否有效或为空
+            if paragraph.strip() == "":
+                # 如果是空行，直接加入到 texts
+                texts.append({"text": "", "origin": "", "complete": True, "sub": False, "ext":"md"})
+                continue  # 跳过后续处理，继续下一个段落
 
-                # 分割段落并追加到 texts
-                sub_paragraphs = split_paragraph(paragraph, max_word)
-                for sub_paragraph in sub_paragraphs:
-                    # 直接将分段的内容追加到 texts
-                    texts.append({"text": sub_paragraph, "origin": sub_paragraph, "complete": False, "sub": True})
+            if keepBoth:
+                # 当 keepBoth 为 True 时，不累加 current_text
+                if len(paragraph) > max_word:
+                    # 如果段落长度超过 max_word，进行拆分
+                    sub_paragraphs = split_paragraph(paragraph, max_word)
+                    for sub_paragraph in sub_paragraphs:
+                        # 直接将分段的内容追加到 texts
+                        texts.append({"text": sub_paragraph, "origin": sub_paragraph, "complete": False, "sub": True, "ext":"md"})
+                else:
+                    # 如果段落长度不超过 max_word，直接加入 texts
+                    texts.append({"text": paragraph, "origin": paragraph, "complete": False, "sub": False, "ext":"md"})
             else:
-                # 在追加之前判断是否超出 max_word
-                if len(current_text) + len(paragraph) + 1 > max_word:  # +1 是为了考虑换行符
-                    # 如果超出 max_word，将 current_text 追加到 texts
-                    texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False})
-                    current_text = ""  # 重置当前文本
+                # 当 keepBoth 为 False 时，处理 current_text 的逻辑
+                if len(paragraph) > max_word:
+                    # 如果当前累加的文本不为空，先将其追加到 texts
+                    if current_text:
+                        texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
+                        current_text = ""  # 重置当前文本
 
-                # 追加段落并换行
-                current_text += paragraph + "\n"  # 追加段落并换行
+                    # 分割段落并追加到 texts
+                    sub_paragraphs = split_paragraph(paragraph, max_word)
+                    for sub_paragraph in sub_paragraphs:
+                        # 直接将分段的内容追加到 texts
+                        texts.append({"text": sub_paragraph, "origin": sub_paragraph, "complete": False, "sub": True, "ext":"md"})
+                else:
+                    # 在追加之前判断是否超出 max_word
+                    if len(current_text) + len(paragraph) > max_word:  # 不再加1，因为我们要保留原有换行符
+                        # 如果超出 max_word，将 current_text 追加到 texts
+                        texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
+                        current_text = ""  # 重置当前文本
+
+                    # 追加段落（保留原有换行符）
+                    current_text += paragraph # 直接追加段落，并加上换行符
 
     # 在循环结束后，如果还有累加的文本，追加到 texts
     if current_text:
-        texts.append({"text": current_text, "origin": current_text.strip(), "complete": False, "sub": False})
+        texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
 
     # print(texts)
     max_run=max_threads if len(texts)>max_threads else len(texts)
@@ -88,11 +106,6 @@ def start(trans):
 
     text_count=0
     # print(texts)
-    trans_type=trans['type']
-    onlyTransText=False
-    if trans_type=="trans_text_only_inherit" or trans_type=="trans_text_only_new" or trans_type=="trans_all_only_new" or trans_type=="trans_all_only_inherit":
-        onlyTransText=True
-
     # 将翻译结果写入新的 TXT 文件
     try:
         with open(trans['target_file'], 'w', encoding='utf-8') as file:
@@ -104,17 +117,17 @@ def start(trans):
                     origin_paragraph+=item["origin"]
                 else:
                     if translated_paragraph!="":
-                        if onlyTransText==False:
+                        if keepBoth:
                             file.write(origin_paragraph+'\n')
-                        file.write(translated_paragraph+'\n\n')
+                        file.write(translated_paragraph+'\n')
                         translated_paragraph=""
                         origin_paragraph=""
-                    if onlyTransText==False:
+                    if keepBoth and item["origin"].strip() != "":
                         file.write(item["origin"] + '\n')
-                    file.write(item["text"] + '\n\n')
+                    file.write(item["text"] + '\n')
 
             if translated_paragraph!="":
-                if onlyTransText==False:
+                if keepBoth and item["origin"].strip() != "":
                     file.write(origin_paragraph+'\n')
                 file.write(translated_paragraph+'\n')
     except Exception as e:
