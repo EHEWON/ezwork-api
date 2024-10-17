@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class Translate extends Model{
 
@@ -11,9 +12,9 @@ class Translate extends Model{
 
     /**
      * 获取用户列表
-     * @param  array  $params 
-     * @param  int $page   
-     * @param  int $limit  
+     * @param  array  $params
+     * @param  int $page
+     * @param  int $limit
      */
     public function getTranslates($params, $page=1, $limit=20){
         $query=DB::table($this->table,'t')->where('t.deleted_flag','N');
@@ -57,7 +58,7 @@ class Translate extends Model{
 
     /**
      * 开始翻译
-     * @param  int $id 
+     * @param  int $id
      */
     public function startTranslate($id){
         $this->where('id',$id)->update([
@@ -68,7 +69,7 @@ class Translate extends Model{
 
     /**
      * 翻译结束
-     * @param  int $id 
+     * @param  int $id
      */
     public function endTranslate($id, $target_filesize){
         $this->where('id',$id)->update([
@@ -81,7 +82,7 @@ class Translate extends Model{
 
     /**
      * 翻译失败
-     * @param  int $id 
+     * @param  int $id
      */
     public function failedTranslate($id, $reason){
         $this->where('id',$id)->increment('failed_count',1,[
@@ -93,17 +94,17 @@ class Translate extends Model{
 
     /**
      * 添加翻译记录
-     * @param  string $email    
-     * @param  string $password 
-     * @return 
+     * @param  string $email
+     * @param  string $password
+     * @return
      */
     public function addTranslate($params){
         return $this->insertGetId([
             'translate_no'=>'T'.date('YmdHis').random_int(10000, 99999),
-            'origin_filename'=>$params['origin_filename'], 
-            'origin_filepath'=>$params['origin_filepath'], 
-            'target_filepath'=>$params['target_filepath'], 
-            'origin_filesize'=>$params['origin_filesize'], 
+            'origin_filename'=>$params['origin_filename'],
+            'origin_filepath'=>$params['origin_filepath'],
+            'target_filepath'=>$params['target_filepath'],
+            'origin_filesize'=>$params['origin_filesize'],
             'uuid'=>$params['uuid'],
             'lang'=>$params['lang'],
             'model'=>$params['model'],
@@ -115,7 +116,7 @@ class Translate extends Model{
             'threads'=>$params['threads'],
             'customer_id'=>$params['customer_id'],
             'origin_lang'=>$params['origin_lang'],
-            'status'=>'none', 
+            'status'=>'none',
             'created_at'=>date('Y-m-d H:i:s'),
             'deleted_flag'=>'N',
         ]);
@@ -133,15 +134,23 @@ class Translate extends Model{
 
     /**
      * 删除数据
-     * @param  int $id 
+     * @param  int $id
      */
     public function deleteTranslate($id){
         $this->where('id',$id)->update(['deleted_flag'=>'Y']);
     }
 
     /**
+     * 多选删除数据
+     * @param  int $id
+     */
+    public function deleteMoreTranslate($ids){
+        $this->whereIn('id', $ids)->update(['deleted_flag'=>'Y']);
+    }
+
+    /**
      * 删除数据
-     * @param  int $id 
+     * @param  int $id
      */
     public function deleteCustomerTranslate($customer_id,$id){
         $this->where('id',$id)->where('customer_id',$customer_id)->update(['deleted_flag'=>'Y']);
@@ -174,5 +183,26 @@ class Translate extends Model{
             ->where('status','done')
             ->where('deleted_flag','N')
             ->count();
+    }
+
+    public function downloadMoreTranslate($ids){
+        $files = $this->whereIn('id', $ids)->pluck('target_filepath')->toArray();
+        $zipName = implode('_', $ids) . '.zip';
+        if (Storage::exists('download/' . $zipName)){
+            return '/storage/download/' . $zipName;
+        }
+        $zipPath = storage_path('app/public/download/' . $zipName);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            foreach ($files as $file) {
+                if (Storage::exists($file)) {
+                    $zip->addFile(storage_path('app/public/' . $file), $file);
+                }
+            }
+            $zip->close();
+        }
+
+        return '/storage/download/' . $zipName;
     }
 }
