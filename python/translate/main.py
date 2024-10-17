@@ -10,6 +10,7 @@ import excel
 import powerpoint
 import pdf
 import txt
+import md
 import pymysql
 import db
 import common
@@ -78,6 +79,8 @@ def main():
         status=pdf.start(trans)
     elif extension == '.txt':
         status=txt.start(trans)
+    elif extension == '.md':
+        status=md.start(trans)
     if status:
         print("success")
         # print(item_count + ";" + spend_time)
