@@ -10,6 +10,7 @@ import excel
 import powerpoint
 import pdf
 import txt
+import csv_handle
 import pymysql
 import db
 import common
@@ -51,7 +52,7 @@ def main():
     target_path_dir=os.path.dirname(target_file)
     if not os.path.exists(origin_path_dir):
         os.makedirs(origin_path_dir, mode=0o777, exist_ok=True)
-    
+
     if not os.path.exists(target_path_dir):
         os.makedirs(target_path_dir, mode=0o777, exist_ok=True)
 
@@ -78,6 +79,8 @@ def main():
         status=pdf.start(trans)
     elif extension == '.txt':
         status=txt.start(trans)
+    elif extension == '.csv':
+        status=csv_handle.start(trans)
     if status:
         print("success")
         # print(item_count + ";" + spend_time)
