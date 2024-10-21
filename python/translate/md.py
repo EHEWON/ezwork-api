@@ -78,7 +78,7 @@ def start(trans):
                     current_text += paragraph+"\n" # 直接追加段落，并加上换行符
 
     # 在循环结束后，如果还有累加的文本，追加到 texts
-    if current_text:
+    if current_text and check_text(current_text):
         texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
 
     max_run=max_threads if len(texts)>max_threads else len(texts)
