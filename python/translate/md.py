@@ -50,37 +50,37 @@ def start(trans):
                     sub_paragraphs = split_paragraph(paragraph, max_word)
                     for sub_paragraph in sub_paragraphs:
                         # 直接将分段的内容追加到 texts
-                        texts.append({"text": sub_paragraph, "origin": sub_paragraph, "complete": False, "sub": True, "ext":"md"})
+                        append_text(sub_paragraph, texts, True)
                 else:
                     # 如果段落长度不超过 max_word，直接加入 texts
-                    texts.append({"text": paragraph, "origin": paragraph, "complete": False, "sub": False, "ext":"md"})
+                    append_text(paragraph, texts, False)
             else:
                 # 当 keepBoth 为 False 时，处理 current_text 的逻辑
                 if len(paragraph) > max_word:
                     # 如果当前累加的文本不为空，先将其追加到 texts
                     if current_text:
-                        texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
+                        append_text(current_text, texts, False)
                         current_text = ""  # 重置当前文本
 
                     # 分割段落并追加到 texts
                     sub_paragraphs = split_paragraph(paragraph, max_word)
                     for sub_paragraph in sub_paragraphs:
                         # 直接将分段的内容追加到 texts
-                        texts.append({"text": sub_paragraph, "origin": sub_paragraph, "complete": False, "sub": True, "ext":"md"})
+                        append_text(sub_paragraph, texts, True)
                 else:
                     # 在追加之前判断是否超出 max_word
                     if len(current_text) + len(paragraph) > max_word:  # 不再加1，因为我们要保留原有换行符
                         # 如果超出 max_word，将 current_text 追加到 texts
-                        texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
+                        append_text(current_text, texts, False)
                         current_text = ""  # 重置当前文本
 
                     # 追加段落（保留原有换行符）
                     current_text += paragraph+"\n" # 直接追加段落，并加上换行符
 
     # 在循环结束后，如果还有累加的文本，追加到 texts
-    if current_text and check_text(current_text):
-        texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
-
+    append_text(current_text, texts, False);
+    # print(texts);
+    # exit()
     max_run=max_threads if len(texts)>max_threads else len(texts)
     before_active_count=threading.activeCount()
     event=threading.Event()
@@ -161,5 +161,11 @@ def split_paragraph(paragraph, max_length):
 
     return parts
 
+def append_text(text, texts, sub=False):
+    if check_text(text):
+        texts.append({"text": text, "origin": text, "complete": False, "sub": sub, "ext":"md"})
+    else:
+        texts.append({"text": "", "origin": "", "complete": True, "sub": sub, "ext":"md"})
+
 def check_text(text):
-    return text!=None and len(text)>0 and not common.is_all_punc(text) 
+    return text!=None and text!="\n" and len(text)>0 and not common.is_all_punc(text) 
