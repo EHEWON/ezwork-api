@@ -38,10 +38,10 @@ def start(trans):
 
     for paragraph in paragraphs:
         if check_text(paragraph) or paragraph.strip() == "":  # 检查段落是否有效或为空
-            if paragraph.strip() == "":
-                # 如果是空行，直接加入到 texts
-                texts.append({"text": "", "origin": "", "complete": True, "sub": False, "ext":"md"})
-                continue  # 跳过后续处理，继续下一个段落
+            # if paragraph.strip() == "":
+            #     # 如果是空行，直接加入到 texts
+            #     texts.append({"text": "", "origin": "", "complete": True, "sub": False, "ext":"md"})
+            #     continue  # 跳过后续处理，继续下一个段落
 
             if keepBoth:
                 # 当 keepBoth 为 True 时，不累加 current_text
@@ -81,7 +81,6 @@ def start(trans):
     if current_text:
         texts.append({"text": current_text, "origin": current_text, "complete": False, "sub": False, "ext":"md"})
 
-    # print(texts)
     max_run=max_threads if len(texts)>max_threads else len(texts)
     before_active_count=threading.activeCount()
     event=threading.Event()
