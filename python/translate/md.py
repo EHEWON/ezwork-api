@@ -75,7 +75,7 @@ def start(trans):
                         current_text = ""  # 重置当前文本
 
                     # 追加段落（保留原有换行符）
-                    current_text += paragraph # 直接追加段落，并加上换行符
+                    current_text += paragraph+"\n" # 直接追加段落，并加上换行符
 
     # 在循环结束后，如果还有累加的文本，追加到 texts
     if current_text:
