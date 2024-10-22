@@ -11,6 +11,7 @@ import powerpoint
 import pdf
 import txt
 import csv_handle
+import md
 import pymysql
 import db
 import common
@@ -81,6 +82,8 @@ def main():
         status=txt.start(trans)
     elif extension == '.csv':
         status=csv_handle.start(trans)
+    elif extension == '.md':
+        status=md.start(trans)
     if status:
         print("success")
         # print(item_count + ";" + spend_time)
