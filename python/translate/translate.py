@@ -28,17 +28,18 @@ def get(trans, event,texts, index):
     # print("翻译{}--开始".format(str(index)))
     # print(datetime.datetime.now())
     try:
-        if extension==".pdf":
-            if text['type']=="text":
-                content=translate_html(text['text'], target_lang, model, prompt)
+        if text['complete']==False:
+            if extension==".pdf":
+                if text['type']=="text":
+                    content=translate_html(text['text'], target_lang, model, prompt)
+                else:
+                    content=get_content_by_image(text['text'], target_lang)
             else:
-                content=get_content_by_image(text['text'], target_lang)
-        else:
-            content=req(text['text'], target_lang, model, prompt)
-        text['count']=count_text(text['text'])
-        if check_translated(content):
-            text['text']=content
-        text['complete']=True
+                content=req(text['text'], target_lang, model, prompt)
+            text['count']=count_text(text['text'])
+            if check_translated(content):
+                text['text']=content
+            text['complete']=True
         # print("翻译{}--结束".format(str(index)))
         # print(text)
         # print(datetime.datetime.now())
@@ -76,6 +77,13 @@ def get(trans, event,texts, index):
     exit(0)
 
 def req(text,target_lang,model,prompt):
+    # 假设 text 是一个字典，包含 'ext' 键
+    # 处理 prompt，检查 text['ext'] 是否存在且等
+    if 'ext' in text and text['ext'] == 'md':
+        # 如果是 md 格式，追加提示文本
+        prompt += "。 请帮助我翻译以下 Markdown 文件中的内容。请注意，您只需翻译文本部分，而不应更改任何 Markdown 标签或格式。保持原有的标题、列表、代码块、链接和其他 Markdown 标签的完整性。"
+
+    # 构建 message
     message = [
         {"role": "system", "content": prompt.replace("{target_lang}", target_lang)},
         {"role": "user", "content": text}
