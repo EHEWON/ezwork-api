@@ -129,7 +129,6 @@ class TranslateController extends BaseAuthController {
         // echo $target_dir;
         @mkdir($target_dir);
 
-        $process_file=$storage_path.'/process/'.$uuid.'.txt';
         $lang=$params['lang'];
         $model=$params['model'];
         $type=(!empty($params['type']) && is_array($params['type'])) ? array_pop($params['type']) : '';
@@ -168,6 +167,24 @@ class TranslateController extends BaseAuthController {
             'api_key'=>$api_key,
             'threads'=>$threads,
         ]);
+
+        if(function_exists('fastcgi_finish_request')){
+            $res=['code' => 0, 'message' => 'ok', 'data' =>[]];
+            ob_end_clean();
+            ob_start();    
+            echo json_encode($res);
+            $size = ob_get_length();
+            header("Content-Length: $size");
+            header('Connection: close');
+            header("HTTP/1.1 200 OK");
+            header("Content-Type: application/json;charset=utf-8");
+            ob_end_flush();
+            if(ob_get_length())
+                ob_flush();
+            flush();
+            fastcgi_finish_request();
+        }
+        ignore_user_abort(true);
         $m_translate->startTranslate($id);
         echo "python3 $translate_main $uuid $storage_path".PHP_EOL;
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path  2>&1");
@@ -184,45 +201,21 @@ class TranslateController extends BaseAuthController {
     public function process(Request $request){
         $params=$request->post();
         $this->validate($params, 'process');
-
         $uuid=$params['uuid'];
-        $file=storage_path('app/public/process/'.$uuid.'.txt');
-        $process=0;
-        $url='';
-        $count=0;
-        $spend='';
-        if(file_exists($file)){
-            $content=file_get_contents($file);
-            if(!empty($content)){
-                $values=explode('$$$', $content);
-                if(count($values)==2){
-                    if($values[0]==-1){
-                        check(false, $values[1]);
-                    }else{
-                        $process=intval($values[1])/intval($values[0]);
-                    }
-                }else if(count($values)>2){
-                    $process=intval($values[1])/intval($values[0]);
-                    $count=$values[2];
-                    $spend=$values[3];
-                    $m_translate=new Translate();
-                    $translate=$m_translate->getTranslateInfoByUUID($uuid);
-                    if(!empty($translate)){
-                        $url='/storage/'.trim($translate['target_filepath'],'/');
-                        if(strtolower($translate['status'])!='done'){
-                            $target_path=storage_path('app/public'.$translate['target_filepath']);
-                            $m_translate->endTranslate($translate['id'], filesize($target_path));
-                        }
-                    }
-                }
-            }else{
-                $process='';
-            }
-        }else{
-            $process='';
+        $m_translate=new Translate();
+        $translate=$m_translate->getTranslateInfoByUUID($uuid);
+        if(!empty($translate)){
+            $url='/storage/'.trim($translate['target_filepath'],'/');
+            check($translate['status']!='failed', $translate['failed_reason']);
+            ok([
+                'process'=>$translate['process'],
+                'url'=>$translate['process']==100 ? $url : '',
+                'count'=>$translate['word_count'],
+                'time'=>spend_time($translate['start_at'], $translate['end_at']),
+                'end_time'=>$translate['end_at']
+            ]);
         }
-
-        ok(['process'=>$process,'url'=>$url,'count'=>$count,'time'=>$spend]);        
+        check(false, Lang::get('translate.translate_not_found'));
     }
 
     /**

@@ -25,7 +25,7 @@ def start(trans):
     try:
         document = Document(trans['file_path'])
     except Exception as e:
-        translate.error(trans['id'],trans['process_file'], "无法访问该文档")
+        translate.error(trans['id'], "无法访问该文档")
         return False
     texts=[]
 

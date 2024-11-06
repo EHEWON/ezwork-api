@@ -20,7 +20,6 @@ def get(trans, event,texts, index):
     model=trans['model']
     backup_model=trans['backup_model']
     prompt=trans['prompt']
-    process_file=trans['process_file']
     extension=trans['extension']
     text=texts[index]
     # print(text)
@@ -73,7 +72,7 @@ def get(trans, event,texts, index):
     texts[index]=text
     # print(text)
     if not event.is_set():
-        process(texts, process_file,translate_id)
+        process(texts,translate_id)
     exit(0)
 
 def req(text,target_lang,model,prompt):
@@ -179,33 +178,24 @@ def check(model):
     except Exception as e:
         return "当前无法完成翻译"
 
-def process(texts, process_file, translate_id):
+def process(texts, translate_id):
     total=0
     complete=0
     for text in texts:
         total+=1
         if text['complete']:
             complete+=1
-    with open(process_file, 'w') as f:
-        if total!=complete:
-            f.write(str(total)+"$$$"+str(complete))
-            if(total!=0):
-                process=format((complete/total)*100, '.1f')
-                db.execute("update translate set process=%s where id=%s", str(process), translate_id)
-        f.close()
+    if total!=complete:
+        if(total!=0):
+            process=format((complete/total)*100, '.1f')
+            db.execute("update translate set process=%s where id=%s", str(process), translate_id)
 
 def complete(trans,text_count,spend_time):
     target_filesize=os.stat(trans['target_file']).st_size
     db.execute("update translate set status='done',end_at=now(),process=100,target_filesize=%s,word_count=%s where id=%s", target_filesize, text_count, trans['id'])
-    with open(trans['process_file'], 'w') as f:
-        f.write("1$$$1$$$"+str(text_count)+"$$$"+spend_time)
-        f.close()
 
-def error(translate_id,process_file, message):
+def error(translate_id, message):
     db.execute("update translate set failed_count=failed_count+1,status='failed',end_at=now(),failed_reason=%s where id=%s", message, translate_id)
-    with open(process_file, 'w') as f:
-        f.write("-1$$$"+message)
-        f.close()
 
 def count_text(text):
     count=0
@@ -245,6 +235,6 @@ def use_backup_model(trans, event,texts, index, message):
         get(trans, event,texts, index)
     else:
         if not event.is_set():
-            error(trans['id'],trans['process_file'], message)
+            error(trans['id'], message)
             print(message)
         event.set()
