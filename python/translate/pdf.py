@@ -95,7 +95,7 @@ def start(trans):
     pdftohtml(trans['file_path'], html_path, texts)
     src_pdf.close()
 
-    print(texts)
+    # print(texts)
     # exit()
 
     max_run=max_threads if len(texts)>max_threads else len(texts)

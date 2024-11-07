@@ -49,6 +49,11 @@ def main():
 
     origin_path_dir=os.path.dirname(file_path)
     target_path_dir=os.path.dirname(target_file)
+
+    if trans['status']=="done":
+        sys.exit();
+    db.execute("update translate set status='process',failed_reason='' where id=%s", translate_id)
+    
     if not os.path.exists(origin_path_dir):
         os.makedirs(origin_path_dir, mode=0o777, exist_ok=True)
 
