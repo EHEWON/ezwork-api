@@ -46,11 +46,14 @@ def main():
 
     file_path=storage_path+origin_filepath
     target_file=storage_path+target_filepath
-    # 进度保存文件
-    process_file= storage_path+"/process/"+uuid+".txt"
 
     origin_path_dir=os.path.dirname(file_path)
     target_path_dir=os.path.dirname(target_file)
+
+    if trans['status']=="done":
+        sys.exit();
+    db.execute("update translate set status='process',failed_reason='' where id=%s", translate_id)
+    
     if not os.path.exists(origin_path_dir):
         os.makedirs(origin_path_dir, mode=0o777, exist_ok=True)
 
@@ -59,42 +62,41 @@ def main():
 
     trans['file_path']=file_path
     trans['target_file']=target_file
-    trans['process_file']=process_file
     trans['storage_path']=storage_path
     extension = origin_filename[origin_filename.rfind('.'):]
     trans['extension']=extension
     trans['run_complete']=True
     item_count=0
     spend_time=''
-    # try:
-    status=True
-    # 设置OpenAI API
-    translate.init_openai(api_url, api_key)
-    if extension=='.docx':
-        status=word.start(trans)
-    elif extension=='.xls' or extension == '.xlsx':
-        status=excel.start(trans)
-    elif extension=='.ppt' or extension == '.pptx':
-        status=powerpoint.start(trans)
-    elif extension == '.pdf':
-        status=pdf.start(trans)
-    elif extension == '.txt':
-        status=txt.start(trans)
-    elif extension == '.csv':
-        status=csv_handle.start(trans)
-    elif extension == '.md':
-        status=md.start(trans)
-    if status:
-        print("success")
-        # print(item_count + ";" + spend_time)
-    else:
-        print("翻译出错了")
-    # except Exception as e:
-    #     translate.error(translate_id,process_file,str(e))
-    #     exc_type, exc_value, exc_traceback = sys.exc_info()
-    #     line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
-    #     print(f"Error occurred on line: {line_number}")
-    #     print(e)
+    try:
+        status=True
+        # 设置OpenAI API
+        translate.init_openai(api_url, api_key)
+        if extension=='.docx':
+            status=word.start(trans)
+        elif extension=='.xls' or extension == '.xlsx':
+            status=excel.start(trans)
+        elif extension=='.ppt' or extension == '.pptx':
+            status=powerpoint.start(trans)
+        elif extension == '.pdf':
+            status=pdf.start(trans)
+        elif extension == '.txt':
+            status=txt.start(trans)
+        elif extension == '.csv':
+            status=csv_handle.start(trans)
+        elif extension == '.md':
+            status=md.start(trans)
+        if status:
+            print("success")
+            # print(item_count + ";" + spend_time)
+        else:
+            print("翻译出错了")
+    except Exception as e:
+        translate.error(translate_id, str(e))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
+        print(f"Error occurred on line: {line_number}")
+        print(e)
 
 if __name__ == '__main__':
     main()
