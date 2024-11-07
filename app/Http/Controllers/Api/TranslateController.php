@@ -189,13 +189,6 @@ class TranslateController extends BaseAuthController {
         echo "python3 $translate_main $uuid $storage_path".PHP_EOL;
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path  2>&1");
         echo $cmd;
-        // if($this->checkEndTranslate($uuid)){
-        //     $m_translate->endTranslate($id, filesize($target_storage_path));
-        // }else{
-        //     $m_translate->failedTranslate($id, $cmd);
-        // }
-
-        ok();
     }
 
     public function process(Request $request){
