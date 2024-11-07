@@ -168,22 +168,22 @@ class TranslateController extends BaseAuthController {
             'threads'=>$threads,
         ]);
 
-        if(function_exists('fastcgi_finish_request')){
-            $res=['code' => 0, 'message' => 'ok', 'data' =>["python3 $translate_main $uuid $storage_path"]];
-            ob_end_clean();
-            ob_start();    
-            echo json_encode($res);
-            $size = ob_get_length();
-            header("Content-Length: $size");
-            header('Connection: close');
-            header("HTTP/1.1 200 OK");
-            header("Content-Type: application/json;charset=utf-8");
-            ob_end_flush();
-            if(ob_get_length())
-                ob_flush();
-            flush();
-            fastcgi_finish_request();
-        }
+        // if(function_exists('fastcgi_finish_request')){
+        //     $res=['code' => 0, 'message' => 'ok', 'data' =>["python3 $translate_main $uuid $storage_path"]];
+        //     ob_end_clean();
+        //     ob_start();    
+        //     echo json_encode($res);
+        //     $size = ob_get_length();
+        //     header("Content-Length: $size");
+        //     header('Connection: close');
+        //     header("HTTP/1.1 200 OK");
+        //     header("Content-Type: application/json;charset=utf-8");
+        //     ob_end_flush();
+        //     if(ob_get_length())
+        //         ob_flush();
+        //     flush();
+        //     fastcgi_finish_request();
+        // }
         ignore_user_abort(true);
         $m_translate->startTranslate($id);
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path  2>&1");
