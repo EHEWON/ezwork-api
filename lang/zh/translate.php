@@ -14,4 +14,5 @@ return [
     'file_path_required'=>'请上传文件',
     'uuid_required'=>'无法读取翻译进度',
     'uuid_required'=>'无法读取翻译进度',
+    'translate_not_found'=>'没有找到翻译记录',
 ];

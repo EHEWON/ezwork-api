@@ -95,7 +95,7 @@ def start(trans):
     pdftohtml(trans['file_path'], html_path, texts)
     src_pdf.close()
 
-    print(texts)
+    # print(texts)
     # exit()
 
     max_run=max_threads if len(texts)>max_threads else len(texts)
@@ -475,7 +475,9 @@ def docxtopdf(docx_path, pdf_path):
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     # subprocess.run([unoconv_path,"-f","pdf","-e","UTF-8","-o",target_path_dir, docx_path])
     print("{} -f pdf -o {} {}".format(unoconv_path,pdf_path, docx_path))
-    subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
+    # subprocess.run("{} -f pdf -o {} {}".format(unoconv_path, pdf_path, docx_path), shell=True)
+    command = [unoconv_path, "-f", "pdf", "-o", pdf_path, docx_path]
+    subprocess.run(command)
     print("done")
 
 def create_temp_file(suffix='.png'):
