@@ -169,7 +169,7 @@ class TranslateController extends BaseAuthController {
         ]);
 
         if(function_exists('fastcgi_finish_request')){
-            $res=['code' => 0, 'message' => 'ok', 'data' =>[]];
+            $res=['code' => 0, 'message' => 'ok', 'data' =>["python3 $translate_main $uuid $storage_path"]];
             ob_end_clean();
             ob_start();    
             echo json_encode($res);
@@ -186,16 +186,8 @@ class TranslateController extends BaseAuthController {
         }
         ignore_user_abort(true);
         $m_translate->startTranslate($id);
-        echo "python3 $translate_main $uuid $storage_path".PHP_EOL;
         $cmd = shell_exec("python3 $translate_main $uuid $storage_path  2>&1");
         echo $cmd;
-        // if($this->checkEndTranslate($uuid)){
-        //     $m_translate->endTranslate($id, filesize($target_storage_path));
-        // }else{
-        //     $m_translate->failedTranslate($id, $cmd);
-        // }
-
-        ok();
     }
 
     public function process(Request $request){

@@ -63,6 +63,7 @@ class Translate extends Model{
     public function startTranslate($id){
         $this->where('id',$id)->update([
             'status'=>'process',
+            'failed_reason'=>'',
             'start_at'=>date('Y-m-d H:i:s'),
         ]);
     }
