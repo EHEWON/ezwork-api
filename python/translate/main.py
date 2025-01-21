@@ -72,7 +72,7 @@ def main():
         status=True
         # 设置OpenAI API
         translate.init_openai(api_url, api_key)
-        if extension=='.docx':
+        if extension=='.docx' or extension=='.doc':
             status=word.start(trans)
         elif extension=='.xls' or extension == '.xlsx':
             status=excel.start(trans)
