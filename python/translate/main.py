@@ -9,6 +9,7 @@ import word
 import excel
 import powerpoint
 import pdf
+import gptpdf
 import txt
 import csv_handle
 import md
@@ -44,8 +45,8 @@ def main():
     api_key=trans['api_key']
     api_url=trans['api_url']
 
-    file_path=storage_path+origin_filepath
-    target_file=storage_path+target_filepath
+    file_path=os.path.join(storage_path, origin_filepath.lstrip("/"))
+    target_file=os.path.join(storage_path, target_filepath.lstrip("/"))
 
     origin_path_dir=os.path.dirname(file_path)
     target_path_dir=os.path.dirname(target_file)
@@ -55,13 +56,13 @@ def main():
     
     if not os.path.exists(origin_path_dir):
         os.makedirs(origin_path_dir, mode=0o777, exist_ok=True)
-
     if not os.path.exists(target_path_dir):
         os.makedirs(target_path_dir, mode=0o777, exist_ok=True)
 
     trans['file_path']=file_path
     trans['target_file']=target_file
     trans['storage_path']=storage_path
+    trans['target_path_dir']=target_path_dir
     extension = origin_filename[origin_filename.rfind('.'):]
     trans['extension']=extension
     trans['run_complete']=True
@@ -78,7 +79,10 @@ def main():
         elif extension=='.ppt' or extension == '.pptx':
             status=powerpoint.start(trans)
         elif extension == '.pdf':
-            status=pdf.start(trans)
+            if pdf.is_scanned_pdf(trans['file_path']):
+                status=gptpdf.start(trans)
+            else:
+                status=pdf.start(trans)
         elif extension == '.txt':
             status=txt.start(trans)
         elif extension == '.csv':

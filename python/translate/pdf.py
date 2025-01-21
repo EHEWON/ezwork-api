@@ -45,10 +45,7 @@ def start(trans):
     # print(trans['storage_path']+"\n")
     # print(trans['target_file']+"\n")
     # print(os.path.join(trans['storage_path'], trans['target_filepath'])+"\n")
-    if is_scanned_pdf(trans['file_path']):
-        pdf_to_text_with_ocr(trans['file_path'],origin_docx_path, trans['origin_lang'])
-    else:
-        pdftodocx(trans['file_path'], origin_docx_path)
+    pdftodocx(trans['file_path'], origin_docx_path)
     word_trans=copy.copy(trans)
     word_trans['file_path']=origin_docx_path
     word_trans['target_file']=target_docx_path
