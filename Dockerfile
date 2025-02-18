@@ -9,6 +9,7 @@ COPY ./ /var/www/ezwork/
 RUN chmod -R 777 storage
 
 RUN composer install
+RUN php artisan migrate
 
 # 暴露 PHP-FPM 默认端口
 EXPOSE 9000

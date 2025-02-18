@@ -28,6 +28,12 @@ abstract class BaseAuthController extends BaseController {
      */
     protected $skip_methods=[];
 
+    /**
+     * 当前请求的方法
+     * @var string
+     */
+    protected $current_method='';
+
     public function __construct(){
 
         parent::__construct();
@@ -38,6 +44,7 @@ abstract class BaseAuthController extends BaseController {
 
         $method=Request::method();
         $action=Request::segment(3);
+        $this->current_method=$action;
         if(in_array($action, $this->skip_methods)) return;
 
         $token=empty(Request::header('token')) ? Request::input('token') : Request::header('token');

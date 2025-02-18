@@ -25,6 +25,7 @@ import pytesseract
 import cv2
 import numpy as np
 import uuid
+from pdfdeal import Doc2X
 # from weasyprint import HTML
 
 pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
@@ -388,8 +389,9 @@ def pdftodocx(pdf_path, docx_path):
     try:
         cv = pdf2docx.Converter(pdf_path)
         cv.debug_page(0)
-        cv.convert(docx_path, multi_processing=False)
+        cv.convert(docx_path, start=0,end=1,multi_processing=False)
         cv.close()
+        #exit()
     except Exception as e:
         print("error")
         pdf2docxNext(pdf_path, docx_path)
@@ -566,6 +568,18 @@ def is_scanned_pdf(pdf_path):
 def is_tesseract_installed():
     tesseract_path = "/usr/local/bin/tesseract"
     return os.path.isfile(tesseract_path) and os.access(tesseract_path, os.X_OK)
+
+def use_doc2x_revert_pdf_to_docx(dox2x_api_key, pdf_file, docx_path):
+    client = Doc2X(apikey=dox2x_api_key,debug=False)
+    success, failed, flag = client.pdf2file(
+        pdf_file=pdf_file,
+        output_path=docx_path,
+        output_format="docx",
+    )
+    if len(success)>0 and success[0]!="":
+        return (True,success[0])
+    else:
+        return (False,failed[0]["error"])
 
 # def save_image(base64_data, path):
 #     image_data = base64.b64decode(base64_data)

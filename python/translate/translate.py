@@ -1,81 +1,95 @@
-import openai
 # import tiktoken
 import datetime
-import common
-import traceback
-import re
-import os
-import pymysql
-import db
-from pathlib import Path
+import hashlib
 import logging
-
+import os
 import sys
 
-def get(trans, event,texts, index):
+import openai
+
+import common
+import db
+
+
+def get(trans, event, texts, index):
     if event.is_set():
         exit(0)
-    translate_id=trans['id']
-    target_lang=trans['lang']
-    model=trans['model']
-    backup_model=trans['backup_model']
-    prompt=trans['prompt']
-    extension=trans['extension']
-    text=texts[index]
-    # print(text)
-    # 创建一个对话列表
-    # print("翻译{}--开始".format(str(index)))
-    # print(datetime.datetime.now())
+    translate_id = trans['id']
+    target_lang = trans['lang']
+    model = trans['model']
+    backup_model = trans['backup_model']
+    prompt = trans['prompt']
+    extension = trans['extension']
+    text = texts[index]
+    api_key = trans['api_key']
+    api_url = trans['api_url']
+    old_text = text['text']
+    md5_key = md5_encryption(
+        str(api_key) + str(api_url) + str(old_text) + str(prompt) + str(backup_model) + str(model) + str(target_lang))
     try:
-        if text['complete']==False:
-            if extension==".pdf":
-                if text['type']=="text":
-                    content=translate_html(text['text'], target_lang, model, prompt)
+        oldtrans = db.get("select * from translate_logs where md5_key=%s", md5_key)
+        if text['complete'] == False:
+            content = ''
+            if oldtrans:
+                content = oldtrans['content']
+            elif extension == ".pdf":
+                if text['type'] == "text":
+                    content = translate_html(text['text'], target_lang, model, prompt)
                 else:
-                    content=get_content_by_image(text['text'], target_lang)
+                    content = get_content_by_image(text['text'], target_lang)
             else:
-                content=req(text['text'], target_lang, model, prompt)
-            text['count']=count_text(text['text'])
+                content = req(text['text'], target_lang, model, prompt)
+            text['count'] = count_text(text['text'])
             if check_translated(content):
-                text['text']=content
-            text['complete']=True
-        # print("翻译{}--结束".format(str(index)))
-        # print(text)
-        # print(datetime.datetime.now())
+                text['text'] = content
+                if oldtrans is None:
+                    db.execute("INSERT INTO translate_logs set api_url=%s,api_key=%s,"
+                               + "backup_model=%s ,created_at=%s ,prompt=%s,  "
+                               + "model=%s,target_lang=%s,source=%s,content=%s,md5_key=%s", str(api_url), str(api_key),
+                               str(backup_model),
+                               datetime.datetime.now(), str(prompt), str(model), str(target_lang), str(old_text),
+                               str(content), str(md5_key))
+            text['complete'] = True
     except openai.AuthenticationError as e:
-        return use_backup_model(trans, event,texts, index, "openai密钥或令牌无效")
+        return use_backup_model(trans, event, texts, index, "openai密钥或令牌无效")
     except openai.APIConnectionError as e:
-        return use_backup_model(trans, event,texts, index, "请求无法与openai服务器或建立安全连接")
+        return use_backup_model(trans, event, texts, index, "请求无法与openai服务器或建立安全连接")
     except openai.PermissionDeniedError as e:
-        return use_backup_model(trans, event,texts, index, "令牌额度不足")
+        return use_backup_model(trans, event, texts, index, "令牌额度不足")
     except openai.RateLimitError as e:
-        return use_backup_model(trans, event,texts, index, "访问速率达到限制,10分钟后再试")
+        return use_backup_model(trans, event, texts, index, "访问速率达到限制,10分钟后再试")
     except openai.InternalServerError as e:
-        return use_backup_model(trans, event,texts, index, "当前分组上游负载已饱和，请稍后再试")
+        return use_backup_model(trans, event, texts, index, "当前分组上游负载已饱和，请稍后再试")
     except openai.APIStatusError as e:
-        return use_backup_model(trans, event,texts, index, e.response)
+        return use_backup_model(trans, event, texts, index, e.response)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
         print(f"Error occurred on line: {line_number}")
         print(e)
         if "retry" not in text:
-            text["retry"]=0
-        text["retry"]+=1
-        if text["retry"]<=3:
-            get(trans, event,texts, index)
+            text["retry"] = 0
+        text["retry"] += 1
+        if text["retry"] <= 3:
+            get(trans, event, texts, index)
             return
         else:
-            text['complete']=True
+            text['complete'] = True
         # traceback.print_exc()
         # print("translate error")
-    texts[index]=text
+    texts[index] = text
     # print(text)
     if not event.is_set():
-        process(texts,translate_id)
+        process(texts, translate_id)
     exit(0)
 
-def req(text,target_lang,model,prompt):
+
+def md5_encryption(data):
+    md5 = hashlib.md5(data.encode('utf-8'))  # 创建一个md5对象
+    return md5.hexdigest()  # 返回加密后的十六进制字符串
+
+
+def req(text, target_lang, model, prompt):
     # 假设 text 是一个字典，包含 'ext' 键
     # 处理 prompt，检查 text['ext'] 是否存在且等
     if 'ext' in text and text['ext'] == 'md':
@@ -88,22 +102,24 @@ def req(text,target_lang,model,prompt):
         {"role": "user", "content": text}
     ]
     # print(openai.base_url)
-    # print(message)
+    print(message)
     # 禁用 OpenAI 的日志输出
     logging.getLogger("openai").setLevel(logging.WARNING)
     # 禁用 httpx 的日志输出
     logging.getLogger("httpx").setLevel(logging.WARNING)
     response = openai.chat.completions.create(
         model=model,  # 使用GPT-3.5版本
-        messages=message
+        messages=message,
+        temperature=0.8
     )
     # for choices in response.choices:
     #     print(choices.message.content)
-    content=response.choices[0].message.content
-    # print(content)
+    content = response.choices[0].message.content
+    print(content)
     return content
 
-def translate_html(html,target_lang,model,prompt):
+
+def translate_html(html, target_lang, model, prompt):
     message = [
         {"role": "system", "content": "把下面的html翻译成{},只返回翻译后的内容".format(target_lang)},
         {"role": "user", "content": html}
@@ -115,10 +131,11 @@ def translate_html(html,target_lang,model,prompt):
     )
     # for choices in response.choices:
     #     print(choices.message.content)
-    content=response.choices[0].message.content
+    content = response.choices[0].message.content
     return content
 
-def get_content_by_image(base64_image,target_lang):
+
+def get_content_by_image(base64_image, target_lang):
     # print(image_path)
     # file_object = openai.files.create(file=Path(image_path), purpose="这是一张图片")
     # print(file_object)
@@ -147,10 +164,11 @@ def get_content_by_image(base64_image,target_lang):
     )
     # for choices in response.choices:
     #     print(choices.message.content)
-    content=response.choices[0].message.content
+    content = response.choices[0].message.content
     # return content
     # print(''.join(map(lambda x: f'<p>{x}</p>',content.split("\n"))))
-    return ''.join(map(lambda x: f'<p>{x}</p>',content.split("\n")))
+    return ''.join(map(lambda x: f'<p>{x}</p>', content.split("\n")))
+
 
 def check(model):
     try:
@@ -178,47 +196,63 @@ def check(model):
     except Exception as e:
         return "当前无法完成翻译"
 
+
 def process(texts, translate_id):
-    total=0
-    complete=0
+    total = 0
+    complete = 0
     for text in texts:
-        total+=1
+        total += 1
         if text['complete']:
-            complete+=1
-    if total!=complete:
-        if(total!=0):
-            process=format((complete/total)*100, '.1f')
+            complete += 1
+    if total != complete:
+        if (total != 0):
+            process = format((complete / total) * 100, '.1f')
             db.execute("update translate set process=%s where id=%s", str(process), translate_id)
 
-def complete(trans,text_count,spend_time):
-    target_filesize=os.stat(trans['target_file']).st_size
-    db.execute("update translate set status='done',end_at=now(),process=100,target_filesize=%s,word_count=%s where id=%s", target_filesize, text_count, trans['id'])
+
+def complete(trans, text_count, spend_time):
+    target_filesize = os.stat(trans['target_file']).st_size
+    db.execute(
+        "update translate set status='done',end_at=now(),process=100,target_filesize=%s,word_count=%s where id=%s",
+        target_filesize, text_count, trans['id'])
+
 
 def error(translate_id, message):
-    db.execute("update translate set failed_count=failed_count+1,status='failed',end_at=now(),failed_reason=%s where id=%s", message, translate_id)
+    db.execute(
+        "update translate set failed_count=failed_count+1,status='failed',end_at=now(),failed_reason=%s where id=%s",
+        message, translate_id)
+
 
 def count_text(text):
-    count=0
+    count = 0
     for char in text:
         if common.is_chinese(char):
-            count+=1;
-        elif char is None or char==" ":
+            count += 1;
+        elif char is None or char == " ":
             continue
         else:
-            count+=0.5
+            count += 0.5
     return count
+
 
 def init_openai(url, key):
     openai.api_key = key
     if "v1" not in url:
-        if url[-1]=="/":
-            url+="v1/"
+        if url[-1] == "/":
+            url += "v1/"
         else:
-            url+="/v1/"
+            url += "/v1/"
     openai.base_url = url
 
+
 def check_translated(content):
-    if content.startswith("Sorry, I cannot") or content.startswith("I am sorry,") or content.startswith("I'm sorry,") or content.startswith("Sorry, I can't") or content.startswith("Sorry, I need more") or content.startswith("抱歉，无法") or content.startswith("错误：提供的文本") or content.startswith("无法翻译") or content.startswith("抱歉，我无法") or content.startswith("对不起，我无法") or content.startswith("ご指示の内容は") or content.startswith("申し訳ございません") or content.startswith("Простите，") or content.startswith("Извините,") or content.startswith("Lo siento,"):
+    if content.startswith("Sorry, I cannot") or content.startswith("I am sorry,") or content.startswith(
+        "I'm sorry,") or content.startswith("Sorry, I can't") or content.startswith(
+        "Sorry, I need more") or content.startswith("抱歉，无法") or content.startswith(
+        "错误：提供的文本") or content.startswith("无法翻译") or content.startswith("抱歉，我无法") or content.startswith(
+        "对不起，我无法") or content.startswith("ご指示の内容は") or content.startswith(
+        "申し訳ございません") or content.startswith("Простите，") or content.startswith(
+        "Извините,") or content.startswith("Lo siento,"):
         return False
     else:
         return True
@@ -228,11 +262,11 @@ def check_translated(content):
 #     encoding=tiktoken.encoding_for_model(model)
 #     return en(encoding.encode(content))
 
-def use_backup_model(trans, event,texts, index, message):
-    if trans['backup_model']!=None and trans['backup_model']!="":
-        trans['model']=trans['backup_model']
-        trans['backup_model']=""
-        get(trans, event,texts, index)
+def use_backup_model(trans, event, texts, index, message):
+    if trans['backup_model'] != None and trans['backup_model'] != "":
+        trans['model'] = trans['backup_model']
+        trans['backup_model'] = ""
+        get(trans, event, texts, index)
     else:
         if not event.is_set():
             error(trans['id'], message)

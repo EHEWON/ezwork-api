@@ -45,11 +45,11 @@ if (!function_exists('spend_time')) {
         $diff = strtotime($end_time) - strtotime($start_time);
         $str = '';
         if ($diff <= 60) {
-            $str = $diff.'秒';
+            $str = "00'".$diff."''";
         } elseif ($diff < 3600) {
             $minutes=intval(floor($diff/60));
             $seconds=$diff%60;
-            $str=$minutes.'分'.$seconds.'秒';
+            $str=str_pad($minutes, 2, '0', STR_PAD_LEFT)."'".$seconds."''";
         }
         return $str;
     }
@@ -76,5 +76,14 @@ if (!function_exists('ok')) {
             'code' => 0,
             'message' => ''], JSON_UNESCAPED_UNICODE);
         die;
+    }
+}
+
+if (!function_exists('email_hidden')){
+    function email_hidden($email){
+        $parts=@explode('@', $email);
+        if(count($parts)==1) return '****';
+        $name=substr_replace($parts[0], '*', 2);
+        return $name.'@'.$parts[1];
     }
 }

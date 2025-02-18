@@ -11,7 +11,7 @@ class Setting extends Model{
 
     /**
      * 获取单个配置
-     * @param  string  $alias 
+     * @param  string  $alias
      * @return array
      */
     public function getSettingByAlias($alias){
@@ -31,9 +31,9 @@ class Setting extends Model{
     public function updateSettingByAlias($group,$alias,$value){
         $serialized=0;
         if(is_array($value)){
-            $value=json_encode($value);  
+            $value=json_encode($value);
             $serialized=1;
-        } 
+        }
         $this->updateOrInsert(['alias'=>$alias,'group'=>$group],[
             'value'=>$value,
             'serialized'=>$serialized,
@@ -43,6 +43,20 @@ class Setting extends Model{
 
     public function getSettingByGroup($group){
         $settings=$this->selectRaw('alias,value,serialized')->where('group',$group)->get()->toArray();
+        if(empty($settings)) return [];
+        $data=[];
+        foreach($settings as $setting){
+            if($setting['serialized']){
+                $data[$setting['alias']]=json_decode($setting['value'],true);
+            }else{
+                $data[$setting['alias']]=$setting['value'];
+            }
+        }
+        return $data;
+    }
+
+    public function getAllSetting(){
+        $settings=$this->selectRaw('alias,value,serialized')->get()->toArray();
         if(empty($settings)) return [];
         $data=[];
         foreach($settings as $setting){

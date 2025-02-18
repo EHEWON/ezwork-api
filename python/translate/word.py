@@ -9,6 +9,9 @@ import os
 import sys
 import time
 import datetime
+import zipfile
+import xml.etree.ElementTree as ET
+import rediscon
 
 def start(trans):
     # 允许的最大线程
@@ -28,7 +31,7 @@ def start(trans):
         translate.error(trans['id'], "无法访问该文档")
         return False
     texts=[]
-
+    api_url=trans['api_url']
     trans_type=trans['type']
     if trans_type=="trans_text_only_inherit":
         # 仅文字-保留原文-继承原版面
@@ -52,9 +55,14 @@ def start(trans):
         # 全部内容-保留原文-继承原版面
         read_rune_text(document, texts)
 
-    # print(texts)
-    # exit()
+    read_comments_from_docx(trans['file_path'], texts)
+    read_insstd_from_docx(trans['file_path'], texts)
+    #print(texts)
+    #exit()
     max_run=max_threads if len(texts)>max_threads else len(texts)
+    #mredis=rediscon.get_conn()
+    #threading_num=int(mredis.get(api_url))
+    #mredis.set(api_url,threading_num+max_run)
     event=threading.Event()
     before_active_count=threading.activeCount()
     while run_index<=len(texts)-1:
@@ -108,7 +116,11 @@ def start(trans):
 
     # print("编辑文档-结束")
     # print(datetime.datetime.now())
-    document.save(trans['target_file'])
+    docx_path=trans['target_file']
+    document.save(docx_path)
+    # 替换批注数据
+    modify_comment_in_docx(docx_path, texts)
+    modify_inssdt_in_docx(docx_path, texts)
     end_time = datetime.datetime.now()
     spend_time=common.display_spend(start_time, end_time)
     if trans['run_complete']:
@@ -263,7 +275,11 @@ def read_run(runs,texts):
 def append_text(text, texts):
     if check_text(text):
         # print(text)
-        texts.append({"text":text, "complete":False})
+        texts.append({"text":text, "type":"text", "complete":False})
+
+def append_comment(text, comment_id, texts):
+    if check_text(text):
+        texts.append({"text":text, "type":"comment","comment_id":comment_id, "complete":False})
 
 def check_text(text):
     return text!=None and len(text)>0 and not common.is_all_punc(text) 
@@ -473,4 +489,101 @@ def modify_comment_in_docx(docx_path, texts):
 
     # print(temp_docx_path)
     # 替换原始文件
+    os.replace(temp_docx_path, docx_path)
+
+
+def append_ins(text, ins_id, texts):
+    if check_text(text):
+        texts.append({"text": text, "type": "ins", "ins_id": ins_id, "complete": False})
+
+
+def read_insstd_from_docx(docx_path, texts):
+    document_ins = []
+    namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+    namespace14='{http://schemas.microsoft.com/office/word/2010/wordml}'
+    with zipfile.ZipFile(docx_path, 'r') as docx:
+        # 尝试读取批注文件
+        if 'word/document.xml' in docx.namelist():
+            with docx.open('word/document.xml') as document_file:
+                # 解析 XML
+                tree = ET.parse(document_file)
+                root = tree.getroot()
+                for element in root.findall(namespace + 'body'):
+                    for p in element.findall(namespace + 'p'):
+                        for ins in p.findall(namespace + 'ins'):
+                            ins_id = ins.get(namespace + 'id')
+                            for r in ins.findall(namespace + 'r'):
+                                for t in r.findall(namespace + 't'):
+                                    append_ins(t.text, ins_id, texts)
+                    for sdt in element.findall(namespace + 'sdt'):
+                        for sdtContent in sdt.findall(namespace + 'sdtContent'):
+                            for p in sdtContent.findall(namespace + 'p'):                                
+                                sdt_id = p.get(namespace14 + 'paraId')
+                                for r in p.findall(namespace + 'r'):
+                                    for t in r.findall(namespace + 't'):
+                                        append_sdt(t.text, sdt_id, texts)
+                                for ins in p.findall(namespace + 'ins'):
+                                    for r in ins.findall(namespace + 'r'):
+                                        for t in r.findall(namespace + 't'):
+                                            append_sdt(t.text, sdt_id, texts)
+                            
+
+
+def append_sdt(text, sdt_id, texts):
+    if check_text(text):
+        texts.append({"text": text, "type": "sdt", "sdt_id": sdt_id, "complete": False})
+
+
+
+def modify_inssdt_in_docx(docx_path, texts):
+    print(texts,docx_path)
+    temp_docx_path = os.path.join(os.path.dirname(docx_path), 'temp_std_' + os.path.basename(docx_path))
+    with zipfile.ZipFile(docx_path, 'r') as docx:
+        with zipfile.ZipFile(temp_docx_path, 'w') as new_docx:
+            for item in docx.infolist():
+                with docx.open(item) as file:
+                    if item.filename == 'word/document.xml':
+                        tree = ET.parse(file)
+                        root = tree.getroot()
+                        namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+                        namespace14='{http://schemas.microsoft.com/office/word/2010/wordml}'
+                        for body in root.findall(namespace + 'body'):
+                            for sdt in body.findall(namespace + 'sdt'):
+                                for sdtContent in sdt.findall(namespace + 'sdtContent'):
+                                    for p in sdtContent.findall(namespace + 'p') :
+                                        for r in p.findall(namespace + 'r'):
+                                            for t in r.findall(namespace + 't'):                                               
+                                                text = t.text
+                                                if check_text(text):
+                                                    for newitem in texts:
+                                                        new_text = newitem.get('text', "")
+                                                        sdt_id = newitem.get('sdt_id', "")
+                                                        if p.get(namespace14 + 'paraId') == sdt_id:
+                                                            t.text = new_text
+                                        for ins in p.findall(namespace + 'ins'):
+                                            for r in ins.findall(namespace + 'r'):
+                                                for t in r.findall(namespace + 't'):
+                                                    text = t.text
+                                                    if check_text(text):
+                                                        for newitem in texts:
+                                                            new_text = newitem.get('text', "")
+                                                            sdt_id = newitem.get('sdt_id', "")
+                                                            if p.get(namespace14 + 'paraId') == sdt_id:
+                                                                t.text = new_text
+
+                            for p in body.findall(namespace + 'p'):
+                                for ins in p.findall(namespace + 'ins'):
+                                    for r in ins.findall(namespace + 'r'):
+                                        for t in r.findall(namespace + 't'):
+                                            text = t.text
+                                            if check_text(text):
+                                                for newitem in texts:
+                                                    new_text = newitem.get('text', "")
+                                                    ins_id = newitem.get('ins_id', "")
+                                                    if ins.get(namespace + 'id') == ins_id:
+                                                        t.text = new_text
+                        modified_xml = ET.tostring(root, encoding='utf-8', xml_declaration=True).decode('utf-8')
+                        new_docx.writestr(item.filename, modified_xml)
+                    else:
+                        new_docx.writestr(item.filename, file.read())
     os.replace(temp_docx_path, docx_path)
