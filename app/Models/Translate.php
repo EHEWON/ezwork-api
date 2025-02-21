@@ -42,7 +42,7 @@ class Translate extends Model {
         }
         $total = $query->clone()->count();
         $query->selectRaw('t.id,t.translate_no,t.status,t.origin_filename,'
-                . 't.origin_filepath,t.lang,t.target_filepath,t.uuid,t.rand_user_id,t.customer_id'
+                . 't.origin_filepath,t.lang,t.target_filepath,t.uuid,t.rand_user_id,t.customer_id,'
                 . 't.start_at,t.end_at,t.process,c.customer_no,'
                 . 't.failed_reason');
         $query->leftJoin('customer as c', 'c.id', '=', 't.customer_id');
