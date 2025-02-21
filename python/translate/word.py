@@ -60,9 +60,6 @@ def start(trans):
     read_insstd_from_docx(trans['file_path'], texts)
     #print(texts)
     max_run=max_threads if len(texts)>max_threads else len(texts)
-    #mredis=rediscon.get_conn()
-    #threading_num=int(mredis.get(api_url))
-    #mredis.set(api_url,threading_num+max_run)
     event=threading.Event()
     before_active_count=threading.activeCount()
     while run_index<=len(texts)-1:
