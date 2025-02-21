@@ -36,26 +36,13 @@ def main():
     target_file=''
     uuid=sys.argv[1]
     storage_path=sys.argv[2]
-
     trans=db.get("select * from translate where uuid=%s", uuid)
-
-    # if trans['status']=="done":
-    #     sys.exit();
-
     translate_id=trans['id']
     origin_filename=trans['origin_filename']
     origin_filepath=trans['origin_filepath']
     target_filepath=trans['target_filepath']
     api_key=trans['api_key']
     api_url=trans['api_url']
-    #mredis=rediscon.get_conn()
-    #threading_num=int(mredis.get(api_url))
-    #if threading_num is not None:
-    #    while threading_num>30:
-    #        time.sleep(2)
-    #        threading_num=int(mredis.get(api_url))
-    #else:
-    #    threading_num=0
     comparison=get_comparison(trans['comparison_id'])
     prompt=get_prompt(trans['prompt_id'], comparison)
     if comparison:
@@ -79,7 +66,6 @@ def main():
     
     if not os.path.exists(origin_path_dir):
         os.makedirs(origin_path_dir, mode=0o777, exist_ok=True)
-
     if not os.path.exists(target_path_dir):
         os.makedirs(target_path_dir, mode=0o777, exist_ok=True)
 

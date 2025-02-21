@@ -96,7 +96,7 @@ def start(trans):
                     file.write(origin_paragraph+'\n')
                 file.write(translated_paragraph+'\n')
     except Exception as e:
-        print(f"无法写入文件 {target_file_path}: {e}")
+        print(f"无法写入文件 {trans['target_file']}: {e}")
         return False
 
     end_time = datetime.datetime.now()

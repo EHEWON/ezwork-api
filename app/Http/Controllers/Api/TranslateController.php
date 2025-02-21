@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Translate;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Contracts\Bus\Dispatcher;
+use App\Jobs\WordJob;
 use ZipArchive;
 
 /**
@@ -88,7 +90,9 @@ class TranslateController extends BaseAuthController {
     public function index(Request $request) {
         $params = $request->input();
         $m_translate = new Translate();
-        $params['customer_id'] = $this->customer_id;
+        if (empty($params['rand_user_id'])) {
+            $params['customer_id'] = $this->customer_id;
+        }
         $page = $params['page'] ?? 1;
         $limit = $params['limit'] ?? 10;
         $data = $m_translate->getTranslates($params, $page, $limit);
@@ -173,6 +177,7 @@ class TranslateController extends BaseAuthController {
             'target_filepath' => $target_filepath,
             'origin_filesize' => filesize($origin_storage_path),
             'customer_id' => $this->customer_id,
+            'rand_user_id' => !empty($params['rand_user_id']) ? $params['rand_user_id'] : null,
             'uuid' => $uuid,
             'lang' => $lang,
             'md5' => $md5,
@@ -191,8 +196,8 @@ class TranslateController extends BaseAuthController {
         ]);
         ignore_user_abort(true);
         $m_translate->startTranslate($id);
-        $cmd = shell_exec("python3 $translate_main $uuid $storage_path  2>&1");
-        echo $cmd;
+        app(Dispatcher::class)->dispatch(new WordJob($uuid));
+        ok();
     }
 
     public function process(Request $request) {
@@ -283,23 +288,33 @@ class TranslateController extends BaseAuthController {
         $this->validate($params, 'check_doc2x');
         $doc2x_secret_key = $params['doc2x_secret_key'];
         $check_main = base_path('python/translate/check_doc2x.py');
-        print_r("python3 -u $check_main $doc2x_secret_key");
         $result = shell_exec("python3 -u $check_main $doc2x_secret_key");
-        print_r($result);
         check(intval($result) == 200, 'failed');
         ok('ok');
     }
 
     public function del(Request $request, $id) {
         $m_translate = new Translate();
-        $m_translate->deleteCustomerTranslate($this->customer_id, $id);
-        ok();
+        $flag = $m_translate->deleteCustomerTranslate($this->customer_id, $id);
+        ok([], $flag != false ? '成功' : '失败');
     }
 
     public function delAll(Request $request) {
         $m_translate = new Translate();
-        $m_translate->deleteAllTranslate($this->customer_id);
-        ok();
+        $flag = $m_translate->deleteAllTranslate($this->customer_id);
+        ok([], $flag != false ? '成功' : '失败');
+    }
+
+    public function randDel(Request $request, $id) {
+        $m_translate = new Translate();
+        $flag = $m_translate->deleteRandCustomerTranslate($request->rand_user_id, $id);
+        ok([], $flag != false ? '成功' : '失败');
+    }
+
+    public function randDelAll(Request $request) {
+        $m_translate = new Translate();
+        $flag = $m_translate->deleteAllRandTranslate($request->rand_user_id);
+        ok([], $flag != false ? '成功' : '失败');
     }
 
     private function checkEndTranslate($uuid) {
@@ -323,7 +338,8 @@ class TranslateController extends BaseAuthController {
      */
     public function finishTotal(Request $request) {
         $m_translate = new Translate();
-        $total = $m_translate->getFinishTotal();
+        $params = $request->input();
+        $total = $m_translate->getFinishTotal($params);
         ok(['total' => $total]);
     }
 
@@ -336,6 +352,54 @@ class TranslateController extends BaseAuthController {
         $m_translate = new Translate();
         $params['customer_id'] = $this->customer_id;
         if (empty($this->customer_id)) {
+            die('没有文件可下载');
+        }
+        $params['status'] = 'done';
+        $results = $m_translate->getTranslates($params, 1, 100);
+        if (empty($results['data'])) {
+            die('没有文件可下载');
+        }
+
+        $zip = new ZipArchive();
+        $zipFileName = '/tmp/files-' . date('Ymd') . rand(100000, 999999) . '.zip';
+
+        if ($zip->open($zipFileName, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+            die("无法打开 <$zipFileName>");
+        }
+        $storage_path = storage_path('app/public/');
+        // 将文件添加到 ZIP
+        foreach ($results['data'] as $res) {
+            $fullpath = $storage_path . trim($res->target_filepath_copy, '/');
+            if (file_exists($fullpath)) {
+                $zip->addFile($fullpath, basename($fullpath)); // 添加文件到 ZIP 中
+            } else {
+                
+            }
+        }
+        $zip->close();
+        if (!file_exists($zipFileName)) {
+            die('打包失败');
+        }
+        // 设置头信息进行下载
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . basename($zipFileName) . '"');
+        header('Content-Length: ' . filesize($zipFileName));
+
+        // 读取文件内容并输出
+        readfile($zipFileName);
+        // 删除生成的 ZIP 文件
+        @unlink($zipFileName);
+    }
+
+    /**
+     * 下载全部
+     * @param  Request $request
+     * @return
+     */
+    public function downloadRand(Request $request) {
+        $m_translate = new Translate();
+        $params['rand_user_id'] = $request->rand_user_id;
+        if (empty($params['rand_user_id'])) {
             die('没有文件可下载');
         }
         $params['status'] = 'done';

@@ -18,10 +18,22 @@ def start(trans):
     run_index=0
     start_time = datetime.datetime.now()
     wb = pptx.Presentation(trans['file_path']) 
+    print(trans['file_path'])
     slides = wb.slides
     texts=[]
     for slide in slides:
         for shape in slide.shapes:
+            if shape.has_table:
+                table = shape.table
+                print(table)
+                rows = len(table.rows)
+                cols = len(table.columns)
+                for r in range(rows):
+                    row_data = []
+                    for c in range(cols):
+                        cell_text = table.cell(r, c).text
+                        if cell_text!=None and len(cell_text)>0 and not common.is_all_punc(cell_text):
+                            texts.append({"text":cell_text,"row":r,"column":c, "complete":False})
             if not shape.has_text_frame:
                 continue
             text_frame = shape.text_frame
@@ -29,7 +41,6 @@ def start(trans):
                 text=paragraph.text
                 if text!=None and len(text)>0 and not common.is_all_punc(text):
                     texts.append({"text":text, "complete":False})
-    
     max_run=max_threads if len(texts)>max_threads else len(texts)
     before_active_count=threading.activeCount()
     event=threading.Event()
@@ -55,6 +66,19 @@ def start(trans):
     text_count=0
     for slide in slides:
         for shape in slide.shapes:
+            if shape.has_table:
+                table = shape.table
+                rows = len(table.rows)
+                cols = len(table.columns)
+                for r in range(rows):
+                    row_data = []
+                    for c in range(cols):
+                        cell_text = table.cell(r, c).text
+                        if cell_text!=None and len(cell_text)>0 and not common.is_all_punc(cell_text):
+                            item=texts.pop(0)
+                            table.cell(r, c).text=item['text']
+                            text_count+=item['count']
+                          
             if not shape.has_text_frame:
                 continue
             text_frame = shape.text_frame

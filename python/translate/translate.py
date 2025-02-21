@@ -4,16 +4,28 @@ import hashlib
 import logging
 import os
 import sys
-
+import re
 import openai
-
 import common
 import db
+import rediscon
+import time
+
+from newpdf import print_texts
 
 
 def get(trans, event, texts, index):
     if event.is_set():
         exit(0)
+    threads=trans['threads']
+    if threads is None or threads=="" or int(threads)<0:
+        max_threads=10
+    else:
+        max_threads=int(threads)
+    mredis=rediscon.get_conn()
+    threading_num=get_threading_num(mredis)
+    #while threading_num>=max_threads:
+    #    time.sleep(1)
     translate_id = trans['id']
     target_lang = trans['lang']
     model = trans['model']
@@ -28,6 +40,7 @@ def get(trans, event, texts, index):
         str(api_key) + str(api_url) + str(old_text) + str(prompt) + str(backup_model) + str(model) + str(target_lang))
     try:
         oldtrans = db.get("select * from translate_logs where md5_key=%s", md5_key)
+        mredis.set("threading_count",threading_num+1)
         if text['complete'] == False:
             content = ''
             if oldtrans:
@@ -37,11 +50,15 @@ def get(trans, event, texts, index):
                     content = translate_html(text['text'], target_lang, model, prompt)
                 else:
                     content = get_content_by_image(text['text'], target_lang)
+            elif extension == ".md":
+                content = req(text['text'], target_lang, model, prompt,True)
             else:
-                content = req(text['text'], target_lang, model, prompt)
+                content = req(text['text'], target_lang, model, prompt,False)
+                #print("content", text['content'])
             text['count'] = count_text(text['text'])
             if check_translated(content):
-                text['text'] = content
+                #过滤deepseek思考过程
+                text['text'] =  re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
                 if oldtrans is None:
                     db.execute("INSERT INTO translate_logs set api_url=%s,api_key=%s,"
                                + "backup_model=%s ,created_at=%s ,prompt=%s,  "
@@ -51,18 +68,25 @@ def get(trans, event, texts, index):
                                str(content), str(md5_key))
             text['complete'] = True
     except openai.AuthenticationError as e:
+        set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, "openai密钥或令牌无效")
     except openai.APIConnectionError as e:
+        set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, "请求无法与openai服务器或建立安全连接")
     except openai.PermissionDeniedError as e:
+        set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, "令牌额度不足")
     except openai.RateLimitError as e:
+        set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, "访问速率达到限制,10分钟后再试")
     except openai.InternalServerError as e:
+        set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, "当前分组上游负载已饱和，请稍后再试")
     except openai.APIStatusError as e:
+        set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, e.response)
     except Exception as e:
+        set_threading_num(mredis)
         exc_type, exc_value, exc_traceback = sys.exc_info()
         line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
         print(f"Error occurred on line: {line_number}")
@@ -81,21 +105,34 @@ def get(trans, event, texts, index):
     # print(text)
     if not event.is_set():
         process(texts, translate_id)
+    set_threading_num(mredis)
     exit(0)
 
+def get_threading_num(mredis):
+    threading_count=mredis.get("threading_count")
+    if threading_count is None or threading_count=="" or int(threading_count)<0:
+        threading_num=0
+    else:
+        threading_num=int(threading_count)
+    return threading_num
+def set_threading_num(mredis):
+    threading_count=mredis.get("threading_count")
+    if threading_count is None or threading_count=="" or int(threading_count)<1:
+        mredis.set("threading_count",0)
+    else:
+        threading_num=int(threading_count)
+        mredis.set("threading_count",threading_num-1)
 
 def md5_encryption(data):
     md5 = hashlib.md5(data.encode('utf-8'))  # 创建一个md5对象
     return md5.hexdigest()  # 返回加密后的十六进制字符串
 
 
-def req(text, target_lang, model, prompt):
-    # 假设 text 是一个字典，包含 'ext' 键
-    # 处理 prompt，检查 text['ext'] 是否存在且等
-    if 'ext' in text and text['ext'] == 'md':
+def req(text, target_lang, model, prompt,ext):
+    # 判断是否是md格式
+    if ext == True:
         # 如果是 md 格式，追加提示文本
         prompt += "。 请帮助我翻译以下 Markdown 文件中的内容。请注意，您只需翻译文本部分，而不应更改任何 Markdown 标签或格式。保持原有的标题、列表、代码块、链接和其他 Markdown 标签的完整性。"
-
     # 构建 message
     message = [
         {"role": "system", "content": prompt.replace("{target_lang}", target_lang)},
@@ -115,7 +152,7 @@ def req(text, target_lang, model, prompt):
     # for choices in response.choices:
     #     print(choices.message.content)
     content = response.choices[0].message.content
-    print(content)
+    #print(content)
     return content
 
 

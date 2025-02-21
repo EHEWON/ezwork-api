@@ -10,20 +10,19 @@ namespace App\Jobs;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
-use App\Helpers\Translate;
 
 class WordJob extends Job {
 
     protected $response;
-    protected $request;
+    protected $uuid;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($request) {
-        $this->request = $request;
+    public function __construct($uuid) {
+        $this->uuid = $uuid;
     }
 
     /**
@@ -34,10 +33,11 @@ class WordJob extends Job {
     public function handle() {
         try {
             date_default_timezone_set('Asia/Shanghai');
-            $repo = new GrabInquiryRepo();
-            $repo->import($this->request);
+            $translate_main = base_path('python/translate/main.py');
+            $storage_path = storage_path('app/public');
+            shell_exec('python3 ' . $translate_main . ' ' . $this->uuid . ' ' . $storage_path . ' 2>&1');
         } catch (Exception $ex) {
-            Log::channel('command')->info('GrabInquiryJob:' . $ex->getMessage());
+            Log::channel('command')->info('python3:' . $ex->getMessage());
         }
     }
 
