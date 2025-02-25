@@ -35,7 +35,7 @@ class WordJob extends Job {
             date_default_timezone_set('Asia/Shanghai');
             $translate_main = base_path('python/translate/main.py');
             $storage_path = storage_path('app/public');
-            shell_exec('python3 ' . $translate_main . ' ' . $this->uuid . ' ' . $storage_path . ' 2>&1');
+            shell_exec('python3 ' . $translate_main . ' ' . $this->uuid . ' ' . $storage_path . ' 2>&1 1> /dev/null');
         } catch (Exception $ex) {
             Log::channel('command')->info('python3:' . $ex->getMessage());
         }

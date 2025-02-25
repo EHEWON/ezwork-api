@@ -119,7 +119,6 @@ class TranslateController extends BaseAuthController {
         date_default_timezone_set('Asia/Shanghai');
         $params = $request->post();
         $this->validate($params, 'start');
-        $translate_main = base_path('python/translate/main.py');
         $storage_path = storage_path('app/public');
         $origin_filepath = $params['file_path'];
         $md5 = md5(file_get_contents($storage_path . $origin_filepath));
@@ -197,6 +196,31 @@ class TranslateController extends BaseAuthController {
         ignore_user_abort(true);
         $m_translate->startTranslate($id);
         app(Dispatcher::class)->dispatch(new WordJob($uuid));
+        ok();
+    }
+
+    /**
+     * 关联客户列表
+     * @param  int $id
+     * @return
+     */
+    public function restart($id) {
+        $translateObj = Translate::where('id', $id)->first();
+        if (empty($translateObj)) {
+            check(false, '翻译文档不存在');
+        } elseif ($translateObj->status == 'done') {
+            check(false, '文档已翻译成功,请勿重复翻译文档');
+        } elseif ($translateObj->status == 'process') {
+            check(false, '文档正在翻译,请勿重复提交');
+        } elseif ($translateObj->status == 'none') {
+            check(false, '文档未开始翻译,请调用立即翻译');
+        }
+//        $translateMain = base_path('python/translate/main.py');
+//        $storagePath = storage_path('app/public');
+//        $cmd = shell_exec('ps aux|grep "python3  ' . $translateMain . ' ' . $translateObj->uuid . ' ' . $storagePath . '"');
+        $m_translate = new Translate();
+        $m_translate->startTranslate($id);
+        app(Dispatcher::class)->dispatch(new WordJob($translateObj->uuid));
         ok();
     }
 

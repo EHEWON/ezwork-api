@@ -24,8 +24,8 @@ def get(trans, event, texts, index):
         max_threads=int(threads)
     mredis=rediscon.get_conn()
     threading_num=get_threading_num(mredis)
-    #while threading_num>=max_threads:
-    #    time.sleep(1)
+    while threading_num>=max_threads:
+        time.sleep(1)
     translate_id = trans['id']
     target_lang = trans['lang']
     model = trans['model']
@@ -48,8 +48,10 @@ def get(trans, event, texts, index):
             elif extension == ".pdf":
                 if text['type'] == "text":
                     content = translate_html(text['text'], target_lang, model, prompt)
+                    time.sleep(0.1)
                 else:
                     content = get_content_by_image(text['text'], target_lang)
+                    time.sleep(0.1)
             elif extension == ".md":
                 content = req(text['text'], target_lang, model, prompt,True)
             else:
@@ -78,10 +80,24 @@ def get(trans, event, texts, index):
         return use_backup_model(trans, event, texts, index, "令牌额度不足")
     except openai.RateLimitError as e:
         set_threading_num(mredis)
-        return use_backup_model(trans, event, texts, index, "访问速率达到限制,10分钟后再试")
+        if "retry" not in text:
+            trans['model']=backup_model
+            trans['backup_model']=model
+            time.sleep(1)
+            print("访问速率达到限制,交换备用模型与模型重新重试")
+            get(trans, event, texts, index)
+        else:
+            return use_backup_model(trans, event, texts, index, "访问速率达到限制,10分钟后再试"+str(text['text']))
     except openai.InternalServerError as e:
         set_threading_num(mredis)
-        return use_backup_model(trans, event, texts, index, "当前分组上游负载已饱和，请稍后再试")
+        if "retry" not in text:
+            trans['model']=backup_model
+            trans['backup_model']=model
+            time.sleep(1)
+            print("当前分组上游负载已饱和，交换备用模型与模型重新重试")
+            get(trans, event, texts, index)
+        else:
+            return use_backup_model(trans, event, texts, index, "当前分组上游负载已饱和，请稍后再试"+str(text['text']))
     except openai.APIStatusError as e:
         set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, e.response)
@@ -95,6 +111,10 @@ def get(trans, event, texts, index):
             text["retry"] = 0
         text["retry"] += 1
         if text["retry"] <= 3:
+            trans['model']=backup_model
+            trans['backup_model']=model
+            print("当前模型执行异常，交换备用模型与模型重新重试")
+            time.sleep(1)
             get(trans, event, texts, index)
             return
         else:

@@ -34,8 +34,10 @@ class Translate extends Model {
             $query->where('rand_user_id', $params['rand_user_id']);
         }
 
-        if (!empty($params['status'])) {
+        if (!empty($params['status']) && is_string($params['status'])) {
             $query->where('t.status', $params['status']);
+        } elseif (!empty($params['status']) && is_array($params['status'])) {
+            $query->whereIn('t.status', $params['status']);
         }
         if (!empty($params['skip_uuids']) && is_array($params['skip_uuids'])) {
             $query->whereNotIn('uuid', $params['skip_uuids']);
@@ -71,6 +73,8 @@ class Translate extends Model {
         $this->where('id', $id)->update([
             'status' => 'process',
             'failed_reason' => '',
+            'process' => 0.0,
+            'failed_count' => 0,
             'start_at' => date('Y-m-d H:i:s'),
         ]);
     }
