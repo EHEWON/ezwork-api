@@ -13,6 +13,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 import rediscon
 
+
 def start(trans):
     # 允许的最大线程
     threads=trans['threads']
@@ -24,6 +25,7 @@ def start(trans):
     run_index=0
     max_chars=1000
     start_time = datetime.datetime.now()
+    #print(Document(trans['file_path']))
     # 创建Document对象，加载Word文件
     try:
         document = Document(trans['file_path'])
@@ -58,7 +60,6 @@ def start(trans):
 
     read_comments_from_docx(trans['file_path'], texts)
     read_insstd_from_docx(trans['file_path'], texts)
-    #print(texts)
     max_run=max_threads if len(texts)>max_threads else len(texts)
     event=threading.Event()
     before_active_count=threading.activeCount()
@@ -67,11 +68,9 @@ def start(trans):
             if not event.is_set():
                 thread = threading.Thread(target=translate.get,args=(trans,event,texts,run_index))
                 thread.start()
-                print(f"开始执行线程{run_index}")
                 run_index+=1
             else:
                 return False
-
     while True:
         if event.is_set():
             return False
@@ -82,7 +81,7 @@ def start(trans):
         if complete:
             break
         else:
-            time.sleep(1)
+           time.sleep(1)
     #print(texts)
     # print("翻译文本-结束")
     #exit()
@@ -129,7 +128,13 @@ def start(trans):
 def read_paragraph_text(document, texts):
     for paragraph in document.paragraphs:
         append_text(paragraph.text, texts)
-
+    section = document.sections[0]
+    for headerparagraph in section.header.paragraphs:
+        read_run(headerparagraph.runs, texts)
+        print("headerparagraph", headerparagraph.text)
+    for footerparagraph in section.footer.paragraphs:
+        read_run(footerparagraph.runs, texts)
+        print("footerparagraph", footerparagraph.text)
     for table in document.tables:
         for row in table.rows:
             start_span=0
@@ -148,7 +153,11 @@ def write_paragraph_text(document, texts, text_count, onlyText):
 def write_both_new(document, texts, text_count, onlyText):
     for paragraph in document.paragraphs:
         replace_paragraph_text(paragraph, texts, text_count, onlyText, True)
-
+    section = document.sections[0]
+    for headerparagraph in section.header.paragraphs:
+        replace_paragraph_text(headerparagraph, texts, text_count,onlyText, True)
+    for footerparagraph in section.footer.paragraphs:
+        replace_paragraph_text(footerparagraph,  texts, text_count,onlyText, True)
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
@@ -179,7 +188,11 @@ def read_rune_text(document, texts):
             for hyperlink in paragraph.hyperlinks:
                 read_run(hyperlink.runs, texts)
 
-    # print("翻译文本--开始")
+    section = document.sections[0]
+    for headerparagraph in section.header.paragraphs:
+        read_run(headerparagraph.runs, texts)
+    for footerparagraph in section.footer.paragraphs:
+        read_run(footerparagraph.runs, texts)
     # print(datetime.datetime.now())
     for table in document.tables:
         for row in table.rows:
@@ -209,7 +222,12 @@ def write_only_new(document, texts, text_count, onlyText):
 
         if onlyText:
             clear_image(paragraph)
-
+    #处理页眉页脚
+    section = document.sections[0]
+    for headerparagraph in section.header.paragraphs:
+        write_run(headerparagraph.runs, texts)
+    for footerparagraph in section.footer.paragraphs:
+        write_run(footerparagraph.runs, texts)
     for table in document.tables:
         for row in table.rows:
             start_span=0
@@ -239,7 +257,15 @@ def write_rune_both(document, texts, text_count, onlyText,target_lang):
                 add_paragraph_run(paragraph, hyperlink.runs, texts, text_count,target_lang)
         if onlyText:
             clear_image(paragraph)
-
+    section = document.sections[0]
+    for headerparagraph in section.header.paragraphs:
+        if (len(headerparagraph.runs) > 0):
+            headerparagraph.runs[-1].add_break()
+            add_paragraph_run(headerparagraph, headerparagraph.runs, texts, text_count,target_lang)
+    for footerparagraph in section.footer.paragraphs:
+        if (len(footerparagraph.runs) > 0):
+            footerparagraph.runs[-1].add_break()
+            add_paragraph_run(footerparagraph, footerparagraph.runs, texts, text_count,target_lang)
         # text_count+=write_run(paragraph.runs, texts)
     for table in document.tables:
         for row in table.rows:
@@ -272,12 +298,15 @@ def read_run(runs,texts):
 
 def append_text(text, texts):
     if check_text(text):
-        # print(text)
         texts.append({"text":text, "type":"text", "complete":False})
 
 def append_comment(text, comment_id, texts):
     if check_text(text):
         texts.append({"text":text, "type":"comment","comment_id":comment_id, "complete":False})
+
+def append_document(text, document_id,texts):
+    if check_text(text):
+        texts.append({"text":text, "type":"document","document_id":document_id, "complete":False})
 
 def check_text(text):
     return text!=None and len(text)>0 and not common.is_all_punc(text)
@@ -429,16 +458,37 @@ def read_comments_from_docx(docx_path, texts):
 
                 # 查找所有批注
                 for comment in root.findall('ns0:comment', namespace):
+                    #print(comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id'))
                     comment_id = comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id')
                     author = comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}author')
                     date = comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}date')
                     text = ''.join(t.text for p in comment.findall('.//ns0:p', namespace) for r in p.findall('.//ns0:r', namespace) for t in r.findall('.//ns0:t', namespace))
                     append_comment(text, comment_id, texts)
 
+        if 'word/document.xml' in docx.namelist():
+            with docx.open('word/document.xml') as document_file:
+                # 解析 XML
+                tree = ET.parse(document_file)
+                root = tree.getroot()
+                # 定义命名空间
+                namespaces = {
+                    'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+                    'u':'urn:schemas-microsoft-com:vml'
+                }
+                # 搜索文本框中的文本
+                textboxes = root.findall('.//u:textbox', namespaces)
+                for textbox in textboxes:
+                    paragraphs = textbox.findall('.//w:p', namespaces)
+                    for paragraph in paragraphs:
+                        document_id = paragraph.get('{http://schemas.microsoft.com/office/word/2010/wordml}paraId')
+                        text = ''.join([text.text for text in paragraph.findall('.//w:t', namespaces) if text.text])
+                        if text:
+                            append_document(text,document_id, texts)
+
+
 def modify_comment_in_docx(docx_path, texts):
     # 创建一个临时文件名，保留原始路径
     temp_docx_path = os.path.join(os.path.dirname(docx_path), 'temp_' + os.path.basename(docx_path))
-
     # 打开原始 docx 文件
     with zipfile.ZipFile(docx_path, 'r') as docx:
         # 创建一个新的 docx 文件
@@ -446,14 +496,12 @@ def modify_comment_in_docx(docx_path, texts):
             for item in docx.infolist():
                 # 读取每个文件
                 with docx.open(item) as file:
+                    # 解析批注 XML
+                    # 定义命名空间
                     if item.filename == 'word/comments.xml':
-                        # 解析批注 XML
                         tree = ET.parse(file)
                         root = tree.getroot()
-
-                        # 定义命名空间
                         namespace = {'ns0': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-
                         # 查找并修改批注
                         for comment in root.findall('ns0:comment', namespace):
                             text = ''.join(t.text for p in comment.findall('.//ns0:p', namespace) for r in p.findall('.//ns0:r', namespace) for t in r.findall('.//ns0:t', namespace))
@@ -466,7 +514,6 @@ def modify_comment_in_docx(docx_path, texts):
                                     # print("comment_id:",comment_id)
                                     # print("origin_id:",comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id'))
                                     if comment.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id') == comment_id:
-
                                         # 清除现有段落
                                         for p in comment.findall('.//ns0:t', namespace):
                                                 # 删除 ns0:t 元素
@@ -483,14 +530,46 @@ def modify_comment_in_docx(docx_path, texts):
                                             p.text=new_text
                         # 打印修改后的 XML 内容
                         modified_xml = ET.tostring(root, encoding='utf-8', xml_declaration=True).decode('utf-8')
-                        # print(modified_xml)
+                        # 将修改后的 XML 写入新的 docx 文件
+                        new_docx.writestr(item.filename, modified_xml)
+                    if item.filename == 'word/document.xml':
+                        # 解析批注 XML
+                        tree = ET.parse(file)
+                        root = tree.getroot()
+                        # 定义命名空间
+                        namespaces = {
+                            'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+                            'u': 'urn:schemas-microsoft-com:vml'
+                        }
+                        textboxes = root.findall('.//u:textbox', namespaces)
+                        for textbox in textboxes:
+                            paragraphs = textbox.findall('.//w:p', namespaces)
+                            for paragraph in paragraphs:
+                                text = ''.join([text.text for text in paragraph.findall('.//w:t', namespaces) if text.text])
+                                if text:
+                                    for newitem in texts:
+                                        # text_count+=newitem.get('count',0)
+                                        new_text = newitem.get('text', "")
+                                        document_id = newitem.get('document_id', "")
+                                        if document_id == paragraph.get('{http://schemas.microsoft.com/office/word/2010/wordml}paraId'):
+                                            # 清除现有段落
+                                            index = 0
+                                            for p in paragraph.findall('.//w:t', namespaces):
+                                                if index == 0:
+                                                    p.text = new_text
+                                                else:
+                                                    p.text = ''
+                                                index +=1
+                                                #p.text = new_text +" "+ document_id
+                                                #print(" p.text",  p.text)
+                        # 打印修改后的 XML 内容
+                        modified_xml = ET.tostring(root, encoding='utf-8', xml_declaration=True).decode('utf-8')
                         # 将修改后的 XML 写入新的 docx 文件
                         new_docx.writestr(item.filename, modified_xml)
                     else:
                         # 其他文件直接写入新的 docx 文件
                         new_docx.writestr(item.filename, file.read())
 
-    # print(temp_docx_path)
     # 替换原始文件
     os.replace(temp_docx_path, docx_path)
 
@@ -498,7 +577,6 @@ def modify_comment_in_docx(docx_path, texts):
 def append_ins(text, ins_id, texts):
     if check_text(text):
         texts.append({"text": text, "type": "ins", "ins_id": ins_id, "complete": False})
-
 
 def read_insstd_from_docx(docx_path, texts):
     document_ins = []
@@ -590,3 +668,18 @@ def modify_inssdt_in_docx(docx_path, texts):
                     else:
                         new_docx.writestr(item.filename, file.read())
     os.replace(temp_docx_path, docx_path)
+def read_shapes_from_docx(doc, texts):
+    xml_content = ET.fromstring(doc.part.related_parts['word/document.xml'].blob.read(),
+                                   ET.XMLParser(encoding='utf-8'))
+
+    # 查找所有的形状（shape）标签
+    shapes = xml_content.xpath('//w:txbxContent',
+                               namespaces={'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'})
+    shape_texts = []
+    for shape in shapes:
+        # 提取形状内的文本
+        text = shape.xpath('string(.)')
+        print(text);
+        #shape_texts.append(text)
+    exit()
+
