@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\{
     Style\Border,
     Style\Font
 };
+
 /**
  * 翻译对照表
  */
@@ -206,13 +207,13 @@ class ComparisonController extends BaseAuthController {
 
         // 创建新的 Spreadsheet 对象
         $spreadsheet = new Spreadsheet();
+
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setCellValue("A1", "序号");
+        $sheet->mergeCells('A1:B1');
         $sheet->getStyle('A1')->applyFromArray($styleArray);
-        $sheet->setCellValue("B1", "术语表标题");
-        $sheet->getStyle('B1')->applyFromArray($styleArray);
+        $sheet->setCellValue('A1', '请输入术语表标题');
         $sourceLanguages = array_merge(['请选择源语种'], $languages);
-        $sheet->getCell('C1')->setDataValidation(
+        $sheet->getCell('A2')->setDataValidation(
                 (new \PhpOffice\PhpSpreadsheet\Cell\DataValidation())
                         ->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST)
                         ->setAllowBlank(true)
@@ -220,10 +221,10 @@ class ComparisonController extends BaseAuthController {
                         ->setShowDropDown(true)
         );
 
-        $sheet->getStyle('C1')->applyFromArray($styleArray);
+        $sheet->getStyle('A2')->applyFromArray($styleArray);
         $targetLanguages = array_merge(['请选择对照语种'], $languages);
         // 设置单元格 A1 和 A2 为下拉选择框
-        $sheet->getCell('D1')->setDataValidation(
+        $sheet->getCell('B2')->setDataValidation(
                 (new \PhpOffice\PhpSpreadsheet\Cell\DataValidation())
                         ->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST)
                         ->setAllowBlank(true)
@@ -231,14 +232,14 @@ class ComparisonController extends BaseAuthController {
                         ->setShowDropDown(true)
         );
 
-        $sheet->getComment('C1')->getText()->createTextRun('源语种取值为' . implode(',', $languages));
-        $sheet->getComment('D1')->getText()->createTextRun('对照语种取值为' . implode(',', $languages));
-        $sheet->getStyle('C1')->applyFromArray($styleArray);
-        $sheet->getStyle('D1')->applyFromArray($styleArray);
-        $sheet->setCellValue("E1", "源语种术语");
-        $sheet->getStyle('E1')->applyFromArray($styleArray);
-        $sheet->setCellValue("F1", "对照语种术语");
-        $sheet->getStyle('F1')->applyFromArray($styleArray);
+        $sheet->getComment('A2')->getText()->createTextRun('源语种取值为' . implode(',', $languages));
+        $sheet->getComment('B2')->getText()->createTextRun('对照语种取值为' . implode(',', $languages));
+        $sheet->getStyle('A2')->applyFromArray($styleArray);
+        $sheet->getStyle('B2')->applyFromArray($styleArray);
+        $sheet->setCellValue('A2', '请选择源语种');
+        $sheet->setCellValue('B2', '请选择对照语种');
+        $sheet->getColumnDimension('A')->setWidth(30);
+        $sheet->getColumnDimension('B')->setWidth(30);
         $sheet->setTitle('术语对照表默认标题');
         // 设置文件名
         $fileName = '术语表模板.xlsx';
@@ -265,16 +266,16 @@ class ComparisonController extends BaseAuthController {
         $spreadsheet = IOFactory::load($file['file']->getRealPath());
         foreach ($spreadsheet->getAllSheets() as $sheet) {
             // 获取第一行的源语言和目标语言
-            $origin_lang = $sheet->getCell('A1')->getValue();
-            $target_lang = $sheet->getCell('B1')->getValue();
-
+            $title = $sheet->getCell('A1')->getValue();
+            $target_lang = $sheet->getCell('B2')->getValue();
+            $origin_lang = $sheet->getCell('A2')->getValue();
             // 检查每个单元格值是否为空
             check(!empty($origin_lang) && !empty($target_lang), '语言不能为空');
-            $title = $sheet->getTitle();
+//            $title = $sheet->getTitle();
             // 处理后面的行数据
             $contents = [];
             $i = 0;
-            foreach ($sheet->getRowIterator(2) as $row) { // 从第二行开始
+            foreach ($sheet->getRowIterator(3) as $row) { // 从第二行开始
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(false); // 包括空单元格
 
@@ -317,10 +318,15 @@ class ComparisonController extends BaseAuthController {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle($comparison['title']);
-        $sheet->setCellValue('A1', $comparison['origin_lang']);
-        $sheet->setCellValue('B1', $comparison['target_lang']);
+        $styleArray = $this->styleArray;
+        // 创建新的 Spreadsheet 对象
+        $sheet->mergeCells('A1:B1');
+        $sheet->getStyle('A1')->applyFromArray($styleArray);
+        $sheet->setCellValue('A1', $comparison['title']);
+        $sheet->setCellValue('A2', $comparison['origin_lang']);
+        $sheet->setCellValue('B2', $comparison['target_lang']);
         // 从 A1 开始写入数据
-        $row = 2; // 从第一行开始
+        $row = 3; // 从第一行开始
         $alphas = range('A', 'Z');
         foreach ($contents as $item) {
             $col = 0; // 从第一列开始
@@ -352,6 +358,7 @@ class ComparisonController extends BaseAuthController {
         if (empty($comparisons)) {
             exit('对照表不存在');
         }
+        $styleArray = $this->styleArray;
         $spreadsheet = new Spreadsheet();
         $spreadsheet->removeSheetByIndex(0);
         foreach ($comparisons as $index => $comparison) {
@@ -361,12 +368,15 @@ class ComparisonController extends BaseAuthController {
             foreach ($items as $item) {
                 $contents[] = explode(',', $item);
             }
+            $sheet->setTitle($comparison['title']);
             // 创建新的 Spreadsheet 对象
-            $sheet->setTitle(mb_substr($comparison['title'], 0, mb_strlen($comparison['title']) > 31 ? 31 : mb_strlen($comparison['title'])));
-            $sheet->setCellValue('A1', $comparison['origin_lang']);
-            $sheet->setCellValue('B1', $comparison['target_lang']);
+            $sheet->mergeCells('A1:B1');
+            $sheet->getStyle('A1')->applyFromArray($styleArray);
+            $sheet->setCellValue('A1', $comparison['title']);
+            $sheet->setCellValue('A2', $comparison['origin_lang']);
+            $sheet->setCellValue('B2', $comparison['target_lang']);
             // 从 A1 开始写入数据
-            $row = 2; // 从第一行开始
+            $row = 3; // 从第一行开始
             $alphas = range('A', 'Z');
             foreach ($contents as $item) {
                 $col = 0; // 从第一列开始
