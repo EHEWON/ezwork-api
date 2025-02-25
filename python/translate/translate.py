@@ -8,7 +8,7 @@ import re
 import openai
 import common
 import db
-import rediscon
+#import rediscon
 import time
 
 from newpdf import print_texts
@@ -22,10 +22,10 @@ def get(trans, event, texts, index):
         max_threads=10
     else:
         max_threads=int(threads)
-    mredis=rediscon.get_conn()
-    threading_num=get_threading_num(mredis)
-    while threading_num>=max_threads:
-        time.sleep(1)
+    #mredis=rediscon.get_conn()
+    #threading_num=get_threading_num(mredis)
+    #while threading_num>=max_threads:
+    #    time.sleep(1)
     translate_id = trans['id']
     target_lang = trans['lang']
     model = trans['model']
@@ -40,7 +40,7 @@ def get(trans, event, texts, index):
         str(api_key) + str(api_url) + str(old_text) + str(prompt) + str(backup_model) + str(model) + str(target_lang))
     try:
         oldtrans = db.get("select * from translate_logs where md5_key=%s", md5_key)
-        mredis.set("threading_count",threading_num+1)
+        #mredis.set("threading_count",threading_num+1)
         if text['complete'] == False:
             content = ''
             if oldtrans:
@@ -70,16 +70,17 @@ def get(trans, event, texts, index):
                                str(content), str(md5_key))
             text['complete'] = True
     except openai.AuthenticationError as e:
-        set_threading_num(mredis)
+        #set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, "openai密钥或令牌无效")
     except openai.APIConnectionError as e:
-        set_threading_num(mredis)
+        #set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, "请求无法与openai服务器或建立安全连接")
     except openai.PermissionDeniedError as e:
-        set_threading_num(mredis)
-        return use_backup_model(trans, event, texts, index, "令牌额度不足")
+        #set_threading_num(mredis)
+        texts[index] = text
+        #return use_backup_model(trans, event, texts, index, "令牌额度不足")
     except openai.RateLimitError as e:
-        set_threading_num(mredis)
+        #set_threading_num(mredis)
         if "retry" not in text:
             trans['model']=backup_model
             trans['backup_model']=model
@@ -89,7 +90,7 @@ def get(trans, event, texts, index):
         else:
             return use_backup_model(trans, event, texts, index, "访问速率达到限制,10分钟后再试"+str(text['text']))
     except openai.InternalServerError as e:
-        set_threading_num(mredis)
+        #set_threading_num(mredis)
         if "retry" not in text:
             trans['model']=backup_model
             trans['backup_model']=model
@@ -99,10 +100,10 @@ def get(trans, event, texts, index):
         else:
             return use_backup_model(trans, event, texts, index, "当前分组上游负载已饱和，请稍后再试"+str(text['text']))
     except openai.APIStatusError as e:
-        set_threading_num(mredis)
+        #set_threading_num(mredis)
         return use_backup_model(trans, event, texts, index, e.response)
     except Exception as e:
-        set_threading_num(mredis)
+        #set_threading_num(mredis)
         exc_type, exc_value, exc_traceback = sys.exc_info()
         line_number = exc_traceback.tb_lineno  # 异常抛出的具体行号
         print(f"Error occurred on line: {line_number}")
@@ -125,23 +126,23 @@ def get(trans, event, texts, index):
     # print(text)
     if not event.is_set():
         process(texts, translate_id)
-    set_threading_num(mredis)
+    #set_threading_num(mredis)
     exit(0)
 
-def get_threading_num(mredis):
-    threading_count=mredis.get("threading_count")
-    if threading_count is None or threading_count=="" or int(threading_count)<0:
-        threading_num=0
-    else:
-        threading_num=int(threading_count)
-    return threading_num
-def set_threading_num(mredis):
-    threading_count=mredis.get("threading_count")
-    if threading_count is None or threading_count=="" or int(threading_count)<1:
-        mredis.set("threading_count",0)
-    else:
-        threading_num=int(threading_count)
-        mredis.set("threading_count",threading_num-1)
+#def get_threading_num(mredis):
+#    threading_count=mredis.get("threading_count")
+#    if threading_count is None or threading_count=="" or int(threading_count)<0:
+#        threading_num=0
+#    else:
+#        threading_num=int(threading_count)
+#    return threading_num
+#def set_threading_num(mredis):
+#    threading_count=mredis.get("threading_count")
+#    if threading_count is None or threading_count=="" or int(threading_count)<1:
+#        mredis.set("threading_count",0)
+#    else:
+#        threading_num=int(threading_count)
+#        mredis.set("threading_count",threading_num-1)
 
 def md5_encryption(data):
     md5 = hashlib.md5(data.encode('utf-8'))  # 创建一个md5对象
