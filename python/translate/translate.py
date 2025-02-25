@@ -11,8 +11,6 @@ import db
 #import rediscon
 import time
 
-from newpdf import print_texts
-
 
 def get(trans, event, texts, index):
     if event.is_set():
