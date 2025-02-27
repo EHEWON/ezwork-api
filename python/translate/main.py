@@ -90,10 +90,10 @@ def main():
         elif extension=='.ppt' or extension == '.pptx':
             status=powerpoint.start(trans)
         elif extension == '.pdf':
-            if pdf.is_scanned_pdf(trans['file_path']):
-                status=gptpdf.start(trans)
-            else:
-                status=pdf.start(trans)
+            #if pdf.is_scanned_pdf(trans['file_path']):
+            #    status=gptpdf.start(trans)
+            #else:
+            status=pdf.start(trans)
         elif extension == '.txt':
             status=txt.start(trans)
         elif extension == '.csv':

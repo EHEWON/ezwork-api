@@ -22,6 +22,7 @@ Route::get('/translates', [TranslateController::class, 'index']);
 Route::get('/translate/setting', [TranslateController::class, 'setting']);
 Route::get('/translate/test', [TranslateController::class, 'test']);
 Route::post('/translate', [TranslateController::class, 'start']);
+Route::post('/translate/{id}', [TranslateController::class, 'restart'])->where('id', '[0-9]+');
 Route::delete('/translate/{id}', [TranslateController::class, 'del'])->where('id', '[0-9]+');
 Route::delete('/translate/all', [TranslateController::class, 'delAll']);
 Route::get('/translate/finish/count', [TranslateController::class, 'finishTotal']);
