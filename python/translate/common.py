@@ -5,6 +5,7 @@ import os
 import platform
 import subprocess
 from pathlib import Path
+from openpyxl.worksheet.formula import ArrayFormula
 
 def is_all_punc(strings):
     if isinstance(strings, datetime.time):
@@ -12,6 +13,8 @@ def is_all_punc(strings):
     elif isinstance(strings, datetime.datetime):
         return True
     elif isinstance(strings, (int, float, complex)):
+        return True
+    elif isinstance(strings, (ArrayFormula)):
         return True
     # print(type(strings))
     chinese_punctuations=get_chinese_punctuation()

@@ -124,6 +124,29 @@ def start(trans):
         translate.complete(trans,text_count,spend_time)
     return True
 
+# 函数还有问题，不能很好地识别纵向单元格。待修改。
+def is_vertical_merge_continued(cell):
+    """
+    判断当前单元格是否为纵向合并中的续合单元格。
+    
+    原理：
+    - 对于纵向合并，首个单元格在其 <w:vMerge> 元素中会标记 w:val="restart"；
+      后续被合并的单元格则可能没有 w:val 属性、或其值为空，或标记为 "continue"。
+    - 因此，如果找到 <w:vMerge> 元素后，其 w:val 属性为 None、空字符串或等于 "continue"
+      （不区分大小写），则认为该单元格是续合单元格，返回 True；否则返回 False。
+    """
+    tc = cell._tc
+    tcPr = tc.tcPr
+    if tcPr is not None:
+        vMerge = tcPr.find(qn('w:vMerge'))
+        if vMerge is not None:
+            # 获取 w:val 属性值，注意有可能返回 None 或空字符串
+            val = vMerge.get(qn('w:val'))
+            # 如果属性不存在、为空字符串或值为 "continue"，则认为是续合单元格
+            if val is None or val.strip() == '' or val.lower() == 'continue':
+                return True
+    return False
+
 
 def read_paragraph_text(document, texts):
     for paragraph in document.paragraphs:
@@ -135,33 +158,74 @@ def read_paragraph_text(document, texts):
     for footerparagraph in section.footer.paragraphs:
         read_run(footerparagraph.runs, texts)
         print("footerparagraph", footerparagraph.text)
+    # for table in document.tables:
+    #     for row in table.rows:
+    #         start_span=0
+    #         for cell in row.cells:
+    #             read_cell_text(cell, texts)
+    # 处理表格中的单元格文本
     for table in document.tables:
         for row in table.rows:
-            start_span=0
-            for cell in row.cells:
-                read_cell_text(cell, texts)
+            current_col = 0
+            cells = row.cells
+            # 横向合并的处理：使用 while 循环，根据 grid_span 跳过被合并的多余单元格
+            while current_col < len(cells):
+                cell = cells[current_col]
+                # 获取 grid_span 值，默认为1
+                tc = cell._tc
+                grid_span_elem = tc.tcPr.find(qn('w:gridSpan')) if tc.tcPr is not None else None
+                grid_span = int(grid_span_elem.get(qn('w:val'), '1')) if grid_span_elem is not None else 1
+                # 新增：判断是否为纵向合并的续合单元格，如果是则跳过处理
+                if not is_vertical_merge_continued(cell):
+                    read_cell_text(cell, texts)
+                current_col += grid_span
+
 
 def write_paragraph_text(document, texts, text_count, onlyText):
     for paragraph in document.paragraphs:
         replace_paragraph_text(paragraph, texts, text_count, onlyText, False)
 
+    # 处理表格中的单元格文本
     for table in document.tables:
         for row in table.rows:
-            for cell in row.cells:
-                write_paragraph_text(cell, texts, text_count, onlyText)
+            current_col = 0
+            cells = row.cells
+            while current_col < len(cells):
+                cell = cells[current_col]
+                tc = cell._tc
+                grid_span_elem = tc.tcPr.find(qn('w:gridSpan')) if tc.tcPr is not None else None
+                grid_span = int(grid_span_elem.get(qn('w:val'), '1')) if grid_span_elem is not None else 1
+                # 只对非纵向续合单元格进行写入翻译文本
+                if not is_vertical_merge_continued(cell):
+                    write_paragraph_text(cell, texts, text_count, onlyText)
+                current_col += grid_span
 
 def write_both_new(document, texts, text_count, onlyText):
     for paragraph in document.paragraphs:
         replace_paragraph_text(paragraph, texts, text_count, onlyText, True)
-    section = document.sections[0]
-    for headerparagraph in section.header.paragraphs:
-        replace_paragraph_text(headerparagraph, texts, text_count,onlyText, True)
-    for footerparagraph in section.footer.paragraphs:
-        replace_paragraph_text(footerparagraph,  texts, text_count,onlyText, True)
+    
+    # 下面的递归调用中，cell传参作为document，会在.sections的地方报错、翻译失败。
+    try:
+        section = document.sections[0]
+        for headerparagraph in section.header.paragraphs:
+            replace_paragraph_text(headerparagraph, texts, text_count,onlyText, True)
+        for footerparagraph in section.footer.paragraphs:
+            replace_paragraph_text(footerparagraph,  texts, text_count,onlyText, True)
+    except:
+        pass
+    # 处理表格中单元格的翻译文本写入
     for table in document.tables:
         for row in table.rows:
-            for cell in row.cells:
+            current_col = 0
+            cells = row.cells
+            while current_col < len(cells):
+                cell = cells[current_col]
+                tc = cell._tc
+                grid_span_elem = tc.tcPr.find(qn('w:gridSpan')) if tc.tcPr is not None else None
+                grid_span = int(grid_span_elem.get(qn('w:val'), '1')) if grid_span_elem is not None else 1
+                # if not is_vertical_merge_continued(cell):
                 write_both_new(cell, texts, text_count, onlyText)
+                current_col += grid_span
 
 def read_cell_text(cell, texts):
     for index,paragraph in enumerate(cell.paragraphs):
@@ -194,11 +258,11 @@ def read_rune_text(document, texts):
     for footerparagraph in section.footer.paragraphs:
         read_run(footerparagraph.runs, texts)
     # print(datetime.datetime.now())
-    for table in document.tables:
-        for row in table.rows:
-            start_span=0
-            for cell in row.cells:
-                read_cell_text(cell, texts)
+    # for table in document.tables:
+    #     for row in table.rows:
+    #         start_span=0
+    #         for cell in row.cells:
+    #             read_cell_text(cell, texts)
                 # start_span+=1
                 # # if start_span==cell.grid_span:
                 # #     start_span=0
@@ -209,7 +273,21 @@ def read_rune_text(document, texts):
 
                 #     if len(paragraph.hyperlinks)>0:
                 #         for hyperlink in paragraph.hyperlinks:
-                #             read_run(hyperlink.runs, texts)
+                #             read_run(hyperlink.runs, texts)  
+    # 处理表格中的单元格文本
+    for table in document.tables:
+        for row in table.rows:
+            current_col = 0
+            cells = row.cells
+            while current_col < len(cells):
+                cell = cells[current_col]
+                tc = cell._tc
+                grid_span_elem = tc.tcPr.find(qn('w:gridSpan')) if tc.tcPr is not None else None
+                grid_span = int(grid_span_elem.get(qn('w:val'), '1')) if grid_span_elem is not None else 1
+                # 新增：只处理非纵向续合单元格，避免重复翻译
+                if not is_vertical_merge_continued(cell):
+                    read_cell_text(cell, texts)
+                current_col += grid_span
 
 
 def write_only_new(document, texts, text_count, onlyText):
@@ -228,21 +306,20 @@ def write_only_new(document, texts, text_count, onlyText):
         write_run(headerparagraph.runs, texts)
     for footerparagraph in section.footer.paragraphs:
         write_run(footerparagraph.runs, texts)
+    # 处理表格中的单元格文本
     for table in document.tables:
         for row in table.rows:
-            start_span=0
-            for cell in row.cells:
-                write_cell_text(cell, texts)
-                # start_span+=1
-                # if start_span==cell.grid_span:
-                #     start_span=0
-                    # text_count+=write_cell(cell, texts)
-                # for paragraph in cell.paragraphs:
-                #     text_count+=write_run(paragraph.runs, texts)
-
-                #     if len(paragraph.hyperlinks)>0:
-                #         for hyperlink in paragraph.hyperlinks:
-                #             text_count+=write_run(hyperlink.runs, texts)
+            current_col = 0
+            cells = row.cells
+            while current_col < len(cells):
+                cell = cells[current_col]
+                tc = cell._tc
+                grid_span_elem = tc.tcPr.find(qn('w:gridSpan')) if tc.tcPr is not None else None
+                grid_span = int(grid_span_elem.get(qn('w:val'), '1')) if grid_span_elem is not None else 1
+                # 仅处理非纵向续合单元格
+                if not is_vertical_merge_continued(cell):
+                    write_cell_text(cell, texts)
+                current_col += grid_span
 
 #保留原译文
 def write_rune_both(document, texts, text_count, onlyText,target_lang):
@@ -267,20 +344,24 @@ def write_rune_both(document, texts, text_count, onlyText,target_lang):
             footerparagraph.runs[-1].add_break()
             add_paragraph_run(footerparagraph, footerparagraph.runs, texts, text_count,target_lang)
         # text_count+=write_run(paragraph.runs, texts)
+    # 处理表格中单元格的文本写入
     for table in document.tables:
         for row in table.rows:
-            # start_span=0
-            for cell in row.cells:
-                # start_span+=1
-                # if start_span==cell.grid_span:
-                #     start_span=0
-                    # text_count+=write_cell(cell, texts)
-                for paragraph in cell.paragraphs:
-                    replace_paragraph_text(paragraph, texts, text_count, onlyText, True)
-
-                    if len(paragraph.hyperlinks)>0:
-                        for hyperlink in paragraph.hyperlinks:
-                            replace_paragraph_text(hyperlink, texts, text_count, onlyText, True)
+            current_col = 0
+            cells = row.cells
+            while current_col < len(cells):
+                cell = cells[current_col]
+                tc = cell._tc
+                grid_span_elem = tc.tcPr.find(qn('w:gridSpan')) if tc.tcPr is not None else None
+                grid_span = int(grid_span_elem.get(qn('w:val'), '1')) if grid_span_elem is not None else 1
+                # 仅处理非纵向续合单元格，避免重复写入译文
+                if not is_vertical_merge_continued(cell):
+                    for paragraph in cell.paragraphs:
+                        replace_paragraph_text(paragraph, texts, text_count, onlyText, True)
+                        if len(paragraph.hyperlinks) > 0:
+                            for hyperlink in paragraph.hyperlinks:
+                                replace_paragraph_text(hyperlink, texts, text_count, onlyText, True)
+                current_col += grid_span
 
 def read_run(runs,texts):
     # text=""
